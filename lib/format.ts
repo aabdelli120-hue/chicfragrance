@@ -26,16 +26,48 @@ export function parseNumber(value: unknown): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+export function formatInt(value: number | null | undefined): string {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return "—";
+  }
+
+  return new Intl.NumberFormat("fr-DZ", {
+    maximumFractionDigits: 0,
+  }).format(Math.round(value));
+}
+
 export function formatDzd(value: number | null | undefined): string {
   if (value === null || value === undefined || Number.isNaN(value)) {
     return "—";
   }
 
-  const formatted = new Intl.NumberFormat("fr-DZ", {
-    maximumFractionDigits: 0,
-  }).format(Math.round(value));
+  return `${formatInt(value)} DZD`;
+}
 
-  return `${formatted} DZD`;
+export function formatUsd(value: number | null | undefined): string {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return "—";
+  }
+
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
+export function formatEur(value: number | null | undefined): string {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return "—";
+  }
+
+  return new Intl.NumberFormat("fr-FR", {
+    style: "currency",
+    currency: "EUR",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
 }
 
 export function formatPercent(value: number | null | undefined): string {

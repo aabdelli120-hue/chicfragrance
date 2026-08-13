@@ -9,6 +9,8 @@ import {
 } from "@/lib/errors";
 import { normalizeOrderNumber, parseNumber, parseSheetDate } from "@/lib/format";
 import { toCanonicalStatus, toSheetStatus, type CanonicalStatus } from "@/lib/status";
+import { sheetA1 } from "@/lib/sheets-config";
+import { getResolvedSheetsLayout } from "@/lib/workspace-settings";
 import type {
   DataSource,
   Expense,
@@ -16,13 +18,9 @@ import type {
   SheetsConfigStatus,
 } from "@/lib/types";
 
-const COMMANDES_SHEET = "COMMANDES";
-const DEPENSES_SHEET = "DEPENSES";
-
-const REQUIRED_ENV = [
+const REQUIRED_SECRETS = [
   "GOOGLE_SERVICE_ACCOUNT_EMAIL",
   "GOOGLE_PRIVATE_KEY",
-  "GOOGLE_SHEET_ID",
 ] as const;
 
 type HeaderMap = Record<string, number>;
@@ -35,7 +33,7 @@ function normalizeHeader(value: string): string {
     .replace(/[^a-z0-9]+/g, "");
 }
 
-function getEnv(name: (typeof REQUIRED_ENV)[number]): string {
+function getEnv(name: (typeof REQUIRED_SECRETS)[number]): string {
   return process.env[name]?.trim() ?? "";
 }
 
@@ -104,8 +102,12 @@ function publicSheetsErrorMessage(error: unknown, fallback: string): string {
   return `${fallback}: ${safe}`;
 }
 
-export function getSheetsConfigStatus(): SheetsConfigStatus {
-  const missing = REQUIRED_ENV.filter((name) => !getEnv(name));
+export async function getSheetsConfigStatus(): Promise<SheetsConfigStatus> {
+  const layout = await getResolvedSheetsLayout();
+  const missing = [
+    ...REQUIRED_SECRETS.filter((name) => !getEnv(name)),
+    ...(layout.spreadsheetId ? [] : ["GOOGLE_SHEET_ID"]),
+  ];
   const allowDemo = process.env.CHIC_ALLOW_DEMO_DATA === "true";
 
   if (missing.length === 0) {
@@ -135,8 +137,8 @@ export function getSheetsConfigStatus(): SheetsConfigStatus {
   };
 }
 
-function assertConfigured() {
-  const status = getSheetsConfigStatus();
+async function assertConfigured() {
+  const status = await getSheetsConfigStatus();
   if (!status.configured) {
     throw new SheetsConfigError(status.missing);
   }
@@ -146,7 +148,8 @@ async function getSheetsClient(): Promise<{
   sheets: sheets_v4.Sheets;
   spreadsheetId: string;
 }> {
-  assertConfigured();
+  await assertConfigured();
+  const layout = await getResolvedSheetsLayout();
 
   const privateKey = normalizePrivateKey(getEnv("GOOGLE_PRIVATE_KEY"));
   assertValidPrivateKey(privateKey);
@@ -161,7 +164,7 @@ async function getSheetsClient(): Promise<{
     });
 
     const sheets = google.sheets({ version: "v4", auth });
-    return { sheets, spreadsheetId: getEnv("GOOGLE_SHEET_ID") };
+    return { sheets, spreadsheetId: layout.spreadsheetId };
   } catch (error) {
     if (error instanceof SheetsApiError) throw error;
     throw new SheetsApiError(publicSheetsErrorMessage(error, "Authentification Google Sheets impossible"));
@@ -274,7 +277,8 @@ async function readSheet(range: string): Promise<unknown[][]> {
 }
 
 export async function readOrders(): Promise<Order[]> {
-  const rows = await readSheet(`${COMMANDES_SHEET}!A:K`);
+  const layout = await getResolvedSheetsLayout();
+  const rows = await readSheet(sheetA1(layout.ordersSheet, layout.ordersRange));
   if (rows.length === 0) return [];
 
   const headers = buildHeaderMap(rows[0] ?? []);
@@ -285,7 +289,8 @@ export async function readOrders(): Promise<Order[]> {
 }
 
 export async function readExpenses(): Promise<Expense[]> {
-  const rows = await readSheet(`${DEPENSES_SHEET}!A:K`);
+  const layout = await getResolvedSheetsLayout();
+  const rows = await readSheet(sheetA1(layout.expensesSheet, layout.expensesRange));
   if (rows.length === 0) return [];
 
   const headers = buildHeaderMap(rows[0] ?? []);
@@ -305,7 +310,8 @@ export async function findOrderRowByNumber(orderNumber: string): Promise<{
     throw new InvalidOrderNumberError(orderNumber);
   }
 
-  const rows = await readSheet(`${COMMANDES_SHEET}!A:K`);
+  const layout = await getResolvedSheetsLayout();
+  const rows = await readSheet(sheetA1(layout.ordersSheet, layout.ordersRange));
   if (rows.length === 0) {
     throw new OrderNotFoundError(normalized);
   }
@@ -349,6 +355,7 @@ export async function updateOrderStatus(
   }
 
   const sheetValue = toSheetStatus(canonical);
+  const layout = await getResolvedSheetsLayout();
   const { rowNumber, statusColumn } = await findOrderRowByNumber(orderNumber);
   const { sheets, spreadsheetId } = await getSheetsClient();
   const columnLetter = String.fromCharCode(65 + statusColumn);
@@ -356,7 +363,7 @@ export async function updateOrderStatus(
   try {
     await sheets.spreadsheets.values.update({
       spreadsheetId,
-      range: `${COMMANDES_SHEET}!${columnLetter}${rowNumber}`,
+      range: `${layout.ordersSheet}!${columnLetter}${rowNumber}`,
       valueInputOption: "USER_ENTERED",
       requestBody: {
         values: [[sheetValue]],
@@ -374,8 +381,25 @@ export async function updateOrderStatus(
   return findOrderByNumber(orderNumber);
 }
 
-export function getPublicSource(): DataSource {
-  return getSheetsConfigStatus().source;
+export async function getPublicSource(): Promise<DataSource> {
+  return (await getSheetsConfigStatus()).source;
+}
+
+export async function testSheetsConnection() {
+  const layout = await getResolvedSheetsLayout();
+  const orders = await readOrders();
+  const expenses = await readExpenses();
+  return {
+    ok: true as const,
+    layout: {
+      ordersSheet: layout.ordersSheet,
+      ordersRange: layout.ordersRange,
+      expensesSheet: layout.expensesSheet,
+      expensesRange: layout.expensesRange,
+    },
+    orders: orders.length,
+    expenses: expenses.length,
+  };
 }
 
 export type { CanonicalStatus };

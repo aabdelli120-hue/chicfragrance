@@ -18,8 +18,8 @@ export type RangePreset =
 export const RANGE_PRESETS: Array<{ id: RangePreset; label: string }> = [
   { id: "today", label: "Aujourd'hui" },
   { id: "yesterday", label: "Hier" },
-  { id: "7d", label: "Les 7 derniers jours" },
-  { id: "30d", label: "Les 30 derniers jours" },
+  { id: "7d", label: "7 derniers jours" },
+  { id: "30d", label: "30 derniers jours" },
   { id: "week", label: "Cette semaine" },
   { id: "month", label: "Ce mois" },
   { id: "lastMonth", label: "Mois précédent" },

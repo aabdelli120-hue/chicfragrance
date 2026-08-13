@@ -1,17 +1,38 @@
 "use client";
 
+import type { JSX } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { FeatureBadge } from "@/components/premium/feature-badge";
+import type { FeatureId } from "@/lib/features";
 
-const NAV = [
+type NavItem = {
+  href: string;
+  label: string;
+  icon: () => JSX.Element;
+  badgeKey?: "orders";
+  feature?: FeatureId;
+};
+
+const ACTIVITY: NavItem[] = [
   { href: "/", label: "Tableau de bord", icon: DashboardIcon },
   { href: "/commandes", label: "Commandes", icon: OrdersIcon, badgeKey: "orders" },
   { href: "/depenses", label: "Dépenses", icon: SpendIcon },
   { href: "/rapports", label: "Rapports", icon: ReportsIcon },
+];
+
+const GROWTH: NavItem[] = [
   { href: "/produits", label: "Produits", icon: ProductsIcon },
   { href: "/clients", label: "Clients", icon: ClientsIcon },
-  { href: "/parametres", label: "Paramètres", icon: SettingsIcon },
+  { href: "/creation-ia", label: "Création IA", icon: SparkIcon, feature: "AI_LANDING_PAGE" },
+];
+
+const PREMIUM: NavItem[] = [
+  { href: "/creation-ia/visuels", label: "AI Studio", icon: StudioIcon, feature: "AI_PRODUCT_IMAGES" },
+  { href: "/creation-ia/landing", label: "Landing Pages", icon: PageIcon, feature: "AI_LANDING_PAGE" },
+  { href: "/creation-ia/creatifs", label: "Créatifs", icon: AdsIcon, feature: "AI_AD_CREATIVES" },
+  { href: "/boutique", label: "Boutique", icon: StoreIcon, feature: "AI_STORE_BUILDER" },
 ];
 
 export function Sidebar({
@@ -32,77 +53,116 @@ export function Sidebar({
         onClick={onClose}
       />
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-[272px] flex-col bg-chic-forest-deep text-white transition-transform lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 flex w-[260px] flex-col bg-chic-forest-deep text-white transition-transform lg:static lg:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="px-6 pt-6">
+        <div className="px-5 pt-5">
           <div className="overflow-hidden rounded-2xl bg-chic-forest">
             <Image
               src="/logo.png"
               alt="Chic Fragrance depuis 1999"
-              width={480}
-              height={300}
-              className="h-auto w-full"
+              width={512}
+              height={320}
+              className="h-auto w-full object-contain"
               priority
             />
           </div>
         </div>
 
-        <nav className="mt-8 flex flex-1 flex-col gap-1 px-4">
-          {NAV.map((item) => {
-            const active = pathname === item.href;
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={onClose}
-                className={`flex items-center justify-between rounded-2xl px-4 py-3 text-sm transition ${
-                  active
-                    ? "bg-white/12 text-white"
-                    : "text-white/75 hover:bg-white/8 hover:text-white"
-                }`}
-              >
-                <span className="flex items-center gap-3">
-                  <Icon />
-                  {item.label}
-                </span>
-                {item.badgeKey === "orders" && orderCount > 0 ? (
-                  <span className="rounded-full bg-chic-gold px-2 py-0.5 text-[11px] font-semibold text-chic-forest-deep">
-                    {orderCount}
-                  </span>
-                ) : null}
-              </Link>
-            );
-          })}
+        <nav className="mt-6 flex-1 space-y-5 overflow-y-auto px-3 pb-4">
+          <NavGroup title="Activité" items={ACTIVITY} pathname={pathname} orderCount={orderCount} onClose={onClose} />
+          <NavGroup title="Croissance" items={GROWTH} pathname={pathname} orderCount={orderCount} onClose={onClose} />
+          <NavGroup title="Premium" items={PREMIUM} pathname={pathname} orderCount={orderCount} onClose={onClose} />
+          <div>
+            <p className="px-3 pb-2 text-[10px] tracking-[0.18em] text-white/35">SYSTÈME</p>
+            <Link
+              href="/parametres"
+              onClick={onClose}
+              className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm ${
+                pathname === "/parametres" ? "nav-active text-white" : "text-white/75 hover:bg-white/8 hover:text-white"
+              }`}
+            >
+              <SettingsIcon />
+              Paramètres
+            </Link>
+          </div>
         </nav>
 
-        <div className="px-4 pb-6">
-          <div className="rounded-2xl border border-chic-gold/50 bg-white/5 p-4">
-            <p className="text-[11px] tracking-[0.18em] text-chic-gold">
-              CHIC FRAGRANCE PREMIUM
-            </p>
+        <div className="px-3 pb-5">
+          <div className="rounded-2xl border border-chic-gold/40 bg-white/5 p-4">
+            <p className="text-[11px] tracking-[0.18em] text-chic-gold">CHIC FRAGRANCE PREMIUM</p>
             <p className="mt-2 text-sm text-white/80">
-              Pilotage, rapports et suivi des commandes depuis votre feuille.
+              Développez votre activité avec des outils intelligents.
             </p>
-            <button className="mt-4 w-full rounded-xl bg-chic-gold px-3 py-2 text-sm font-semibold text-chic-forest-deep">
+            <Link
+              href="/premium"
+              onClick={onClose}
+              className="mt-4 block rounded-xl bg-gradient-to-r from-[#e6c56a] to-[#c9a227] px-3 py-2 text-center text-sm font-semibold text-chic-forest-deep"
+            >
               Découvrir Premium
-            </button>
+            </Link>
           </div>
-
           <div className="mt-4 flex items-center gap-3 px-1">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-chic-gold text-sm font-semibold text-chic-forest-deep">
-              CF
+              S
             </div>
             <div>
-              <p className="text-sm font-medium">Chic Fragrance</p>
+              <p className="text-sm font-medium">Sofiane</p>
               <p className="text-xs text-white/60">Administrateur</p>
             </div>
           </div>
         </div>
       </aside>
     </>
+  );
+}
+
+function NavGroup({
+  title,
+  items,
+  pathname,
+  orderCount,
+  onClose,
+}: {
+  title: string;
+  items: NavItem[];
+  pathname: string;
+  orderCount: number;
+  onClose: () => void;
+}) {
+  return (
+    <div>
+      <p className="px-3 pb-2 text-[10px] tracking-[0.18em] text-white/35">{title.toUpperCase()}</p>
+      <div className="space-y-1">
+        {items.map((item) => {
+          const active = pathname === item.href;
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={onClose}
+              className={`relative flex items-center justify-between rounded-2xl px-3 py-2.5 text-sm transition ${
+                active ? "nav-active text-white" : "text-white/75 hover:bg-white/8 hover:text-white"
+              }`}
+            >
+              <span className="flex items-center gap-3">
+                <Icon />
+                {item.label}
+              </span>
+              {item.badgeKey === "orders" && orderCount > 0 ? (
+                <span className="rounded-full bg-chic-gold px-2 py-0.5 text-[11px] font-semibold text-chic-forest-deep">
+                  {orderCount}
+                </span>
+              ) : item.feature ? (
+                <FeatureBadge feature={item.feature} />
+              ) : null}
+            </Link>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -116,7 +176,6 @@ function DashboardIcon() {
     </svg>
   );
 }
-
 function OrdersIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -125,16 +184,13 @@ function OrdersIcon() {
     </svg>
   );
 }
-
 function SpendIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
       <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.7" />
-      <path d="M12 8v8M9.5 10.5c.6-1 1.6-1.5 2.5-1.5 1.6 0 2.5 1 2.5 2s-.9 2-2.5 2-2.5 1-2.5 2 1 2 2.5 2c1 0 1.9-.5 2.5-1.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
     </svg>
   );
 }
-
 function ReportsIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -142,32 +198,60 @@ function ReportsIcon() {
     </svg>
   );
 }
-
 function ProductsIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
       <path d="M12 3 20 7.5v9L12 21 4 16.5v-9L12 3Z" stroke="currentColor" strokeWidth="1.7" />
-      <path d="M12 12 20 7.5M12 12v9M12 12 4 7.5" stroke="currentColor" strokeWidth="1.7" />
     </svg>
   );
 }
-
 function ClientsIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
       <circle cx="9" cy="8" r="3" stroke="currentColor" strokeWidth="1.7" />
-      <path d="M4 19c.6-3 2.6-4.5 5-4.5S13.4 16 14 19" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-      <circle cx="17" cy="9" r="2.2" stroke="currentColor" strokeWidth="1.7" />
-      <path d="M16 19c.3-2 1.5-3.2 3.2-3.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
     </svg>
   );
 }
-
 function SettingsIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
       <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.7" />
-      <path d="M12 4v2M12 18v2M4 12h2M18 12h2M6.3 6.3l1.4 1.4M16.3 16.3l1.4 1.4M17.7 6.3l-1.4 1.4M7.7 16.3l-1.4 1.4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    </svg>
+  );
+}
+function SparkIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <path d="M12 3v4M12 17v4M4 12h4M16 12h4M6.5 6.5l2.5 2.5M15 15l2.5 2.5M17.5 6.5 15 9M9 15l-2.5 2.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    </svg>
+  );
+}
+function StudioIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <rect x="4" y="5" width="16" height="14" rx="2" stroke="currentColor" strokeWidth="1.7" />
+    </svg>
+  );
+}
+function PageIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <path d="M7 3h7l5 5v13H7V3Z" stroke="currentColor" strokeWidth="1.7" />
+    </svg>
+  );
+}
+function AdsIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <path d="M4 8h10l6-3v14l-6-3H4V8Z" stroke="currentColor" strokeWidth="1.7" />
+    </svg>
+  );
+}
+function StoreIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <path d="M4 9h16l-1 11H5L4 9Z" stroke="currentColor" strokeWidth="1.7" />
+      <path d="M8 9V7a4 4 0 0 1 8 0v2" stroke="currentColor" strokeWidth="1.7" />
     </svg>
   );
 }

@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const config = getSheetsConfigStatus();
+    const config = await getSheetsConfigStatus();
 
     if (config.source === "google-sheets") {
       const orders = await readOrders();

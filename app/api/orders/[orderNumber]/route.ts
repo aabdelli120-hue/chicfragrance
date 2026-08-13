@@ -41,7 +41,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       );
     }
 
-    const config = getSheetsConfigStatus();
+    const config = await getSheetsConfigStatus();
     if (!config.configured) {
       return NextResponse.json(
         {

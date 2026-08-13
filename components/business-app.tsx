@@ -4,16 +4,19 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { ConnectionBanner } from "@/components/connection-banner";
-import { KpiCards } from "@/components/kpi-cards";
+import { DateRangePicker } from "@/components/date-range-picker";
+import { DeliveryStage, HeroStrip } from "@/components/dashboard-hero";
+import { FinancialStrip, AdPerformance } from "@/components/financial-strip";
+import { OrderDonut } from "@/components/order-donut";
+import { OrderFlow } from "@/components/order-flow";
 import { OrdersTable } from "@/components/orders-table";
 import { PerformanceChart } from "@/components/performance-chart";
-import { RightPanels } from "@/components/right-panels";
-import { DateRangePicker } from "@/components/date-range-picker";
+import { PremiumBanner } from "@/components/premium-banner";
+import { StatusKpis } from "@/components/status-kpis";
 import { useToast } from "@/components/toast-provider";
 import {
   previousEquivalentRange,
   resolveDateRange,
-  formatSelectedRange,
   type DateRange,
   type RangePreset,
 } from "@/lib/date-range";
@@ -33,9 +36,7 @@ export function BusinessApp({
   title?: string;
   placeholder?: string;
 }) {
-  return (
-    <InnerApp page={page} title={title} placeholder={placeholder} />
-  );
+  return <InnerApp page={page} title={title} placeholder={placeholder} />;
 }
 
 function InnerApp({
@@ -178,7 +179,9 @@ function DataView({
     previousRange,
   );
   const rangedOrders = filterOrdersByRange(orders, range);
-  const rangeLabel = formatSelectedRange(preset, range);
+  const greeting = title ?? "Bonjour, Sofiane 👋";
+  const subtitle =
+    placeholder ?? "Voici un aperçu de votre activité aujourd'hui.";
 
   async function handleStatusChange(
     orderNumber: string,
@@ -230,80 +233,132 @@ function DataView({
     }
   }
 
-  return (
-    <main className="px-4 py-5 lg:px-8 lg:py-7">
-      <header className="silk-hero relative overflow-hidden rounded-[28px] px-6 py-7 text-white lg:px-8">
-        <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-sm text-white/70">Chic Fragrance · Depuis 1999</p>
-            <h1 className="mt-2 font-serif text-3xl lg:text-4xl">
-              {title ?? "Bonjour, Chic Fragrance 👋"}
-            </h1>
-            <p className="mt-2 max-w-xl text-sm text-white/80">
-              {placeholder ??
-                "Voici un aperçu de votre activité. Google Sheets reste la source de vérité."}
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <DateRangePicker
-              preset={preset}
-              range={range}
-              custom={customRange}
-              onPresetChange={setPreset}
-              onCustomChange={setCustomRange}
-            />
-            <button
-              type="button"
-              onClick={() =>
-                notify("info", "La création de commande depuis le site n'est pas encore activée.")
-              }
-              className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-chic-forest"
-            >
-              + Nouvelle commande
-            </button>
-          </div>
-        </div>
-      </header>
+  const picker = (
+    <DateRangePicker
+      preset={preset}
+      range={range}
+      custom={customRange}
+      onPresetChange={setPreset}
+      onCustomChange={setCustomRange}
+      tone={page === "dashboard" ? "dark" : "light"}
+    />
+  );
 
-      <div className="mt-5 space-y-4">
-        {loading ? null : (
-          <ConnectionBanner source={source} message={message} missing={missing} />
-        )}
+  const lightPicker = (
+    <DateRangePicker
+      preset={preset}
+      range={range}
+      custom={customRange}
+      onPresetChange={setPreset}
+      onCustomChange={setCustomRange}
+      tone="light"
+    />
+  );
+
+  return (
+    <main className="px-4 pb-8 pt-2 lg:px-8 lg:py-7">
+      {page === "dashboard" ? (
+        <>
+          <section className="lg:hidden">
+            <h1 className="font-serif text-[32px] leading-tight">{greeting}</h1>
+            <p className="mt-2 text-sm text-chic-muted">{subtitle}</p>
+            <div className="mt-4">{lightPicker}</div>
+            <div className="mt-3">
+              {loading ? null : (
+                <ConnectionBanner source={source} message={message} missing={missing} />
+              )}
+            </div>
+          </section>
+
+          <header className="silk-hero relative hidden overflow-hidden rounded-[28px] px-7 py-7 text-white lg:block">
+            <div className="relative z-10 flex items-end justify-between gap-6">
+              <div>
+                <h1 className="font-serif text-4xl">{greeting}</h1>
+                <p className="mt-2 max-w-xl text-sm text-white/78">{subtitle}</p>
+                <div className="mt-4">
+                  {loading ? null : (
+                    <ConnectionBanner
+                      source={source}
+                      message={message}
+                      missing={missing}
+                      compact={source === "google-sheets"}
+                    />
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                {picker}
+                <button
+                  type="button"
+                  onClick={() =>
+                    notify("info", "La création de commande depuis le site n'est pas encore activée.")
+                  }
+                  className="rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-chic-forest"
+                >
+                  + Nouvelle commande
+                </button>
+              </div>
+            </div>
+            {loading ? null : <HeroStrip metrics={metrics} deltas={deltas} />}
+          </header>
+        </>
+      ) : (
+        <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h1 className="font-serif text-3xl">{greeting}</h1>
+            <p className="mt-2 max-w-xl text-sm text-chic-muted">{subtitle}</p>
+          </div>
+          {lightPicker}
+        </header>
+      )}
+
+      <div className="mt-4 space-y-4">
         {error ? (
           <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
             {error}
           </div>
         ) : null}
         {loading ? (
-          <div className="card px-5 py-8 text-sm text-chic-muted">
-            Chargement des données…
-          </div>
+          <div className="card px-5 py-8 text-sm text-chic-muted">Chargement des données…</div>
         ) : null}
       </div>
 
       {loading ? null : page === "dashboard" ? (
         <div className="mt-5 space-y-5">
-          <KpiCards metrics={metrics} deltas={deltas} rangeLabel={rangeLabel} />
-          <div className="grid gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,0.9fr)]">
-            <div className="space-y-5">
-              <PerformanceChart metrics={metrics} />
-              <article className="card">
-                <div className="flex items-center justify-between px-5 py-4">
-                  <h2 className="font-serif text-xl">Commandes récentes</h2>
-                  <Link href="/commandes" className="text-sm text-chic-emerald">
-                    Voir toutes les commandes
-                  </Link>
-                </div>
-                <OrdersTable
-                  orders={rangedOrders.slice(0, 8)}
-                  updating={updating}
-                  onStatusChange={handleStatusChange}
-                  compact
-                />
-              </article>
-            </div>
-            <RightPanels metrics={metrics} />
+          <div className="lg:hidden">
+            <DeliveryStage metrics={metrics} />
           </div>
+          <div className="hidden lg:grid lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)] lg:gap-5">
+            <OrderFlow metrics={metrics} />
+            <DeliveryStage metrics={metrics} />
+          </div>
+          <StatusKpis metrics={metrics} />
+          <div className="lg:hidden">
+            <OrderFlow metrics={metrics} />
+          </div>
+          <FinancialStrip metrics={metrics} />
+          <div className="grid gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(300px,0.9fr)]">
+            <PerformanceChart metrics={metrics} />
+            <AdPerformance metrics={metrics} />
+          </div>
+          <div className="grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(300px,0.85fr)]">
+            <article className="card">
+              <div className="flex items-center justify-between px-5 py-4">
+                <h2 className="font-serif text-xl">Commandes récentes</h2>
+                <Link href="/commandes" className="text-sm text-chic-emerald">
+                  Voir toutes
+                </Link>
+              </div>
+              <OrdersTable
+                orders={rangedOrders.slice(0, 8)}
+                updating={updating}
+                onStatusChange={handleStatusChange}
+                compact
+              />
+            </article>
+            <OrderDonut metrics={metrics} />
+          </div>
+          <PremiumBanner />
         </div>
       ) : null}
 

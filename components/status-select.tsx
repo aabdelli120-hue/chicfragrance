@@ -32,8 +32,8 @@ export function StatusSelect({
         disabled ? "opacity-60" : "cursor-pointer"
       }`}
     >
-      {!canonical && value ? (
-        <option value="">{value}</option>
+      {!canonical ? (
+        <option value="">{value ? value : "Statut"}</option>
       ) : null}
       {CANONICAL_STATUSES.map((status) => (
         <option key={status} value={status}>

@@ -20,6 +20,9 @@ export type DashboardMetrics = {
   deliveryRate: number | null;
   returnRate: number | null;
   adSpend: number;
+  spendUsd: number;
+  spendEur: number;
+  confirmedOrders: number | null;
   collected: number;
   netAfterAds: number;
   cpaReel: number | null;
@@ -97,6 +100,21 @@ export function computeMetrics(
     (sum, expense) => sum + (expense.spendDz ?? 0),
     0,
   );
+  const spendUsd = rangedExpenses.reduce(
+    (sum, expense) => sum + (expense.spendDollars ?? 0),
+    0,
+  );
+  const spendEur = rangedExpenses.reduce(
+    (sum, expense) => sum + (expense.spendEur ?? 0),
+    0,
+  );
+  const confirmedOrders = rangedExpenses.reduce(
+    (sum, expense) => sum + (expense.confirmedOrders ?? 0),
+    0,
+  );
+  const hasConfirmedOrders = rangedExpenses.some(
+    (expense) => expense.confirmedOrders !== null,
+  );
 
   const statusCounts = Object.fromEntries(
     CANONICAL_STATUSES.map((status) => [status, countCanonical(rangedOrders, status)]),
@@ -141,9 +159,12 @@ export function computeMetrics(
     deliveryRate: percent(deliveredCount, orderCount),
     returnRate: percent(returnCount, orderCount),
     adSpend,
+    spendUsd,
+    spendEur,
+    confirmedOrders: hasConfirmedOrders ? confirmedOrders : null,
     collected,
     netAfterAds: collected - adSpend,
-    cpaReel: ratio(adSpend, orderCount),
+    cpaReel: ratio(adSpend, hasConfirmedOrders ? confirmedOrders : 0),
     costPerDelivery: ratio(adSpend, deliveredCount),
     roas: ratio(collected, adSpend),
     statusCounts,
