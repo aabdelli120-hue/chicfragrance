@@ -10,6 +10,7 @@ import {
 import { normalizeOrderNumber, parseNumber, parseSheetDate } from "@/lib/format";
 import { toCanonicalStatus, toSheetStatus, type CanonicalStatus } from "@/lib/status";
 import { sheetA1 } from "@/lib/sheets-config";
+import { getOrgSheetsLayout } from "@/lib/platform/integrations";
 import { getResolvedSheetsLayout } from "@/lib/workspace-settings";
 import type {
   DataSource,
@@ -17,6 +18,13 @@ import type {
   Order,
   SheetsConfigStatus,
 } from "@/lib/types";
+
+async function resolveLayout(organizationId?: string) {
+  if (organizationId) {
+    return getOrgSheetsLayout(organizationId);
+  }
+  return getResolvedSheetsLayout();
+}
 
 const REQUIRED_SECRETS = [
   "GOOGLE_SERVICE_ACCOUNT_EMAIL",
@@ -102,8 +110,10 @@ function publicSheetsErrorMessage(error: unknown, fallback: string): string {
   return `${fallback}: ${safe}`;
 }
 
-export async function getSheetsConfigStatus(): Promise<SheetsConfigStatus> {
-  const layout = await getResolvedSheetsLayout();
+export async function getSheetsConfigStatus(
+  organizationId?: string,
+): Promise<SheetsConfigStatus> {
+  const layout = await resolveLayout(organizationId);
   const missing = [
     ...REQUIRED_SECRETS.filter((name) => !getEnv(name)),
     ...(layout.spreadsheetId ? [] : ["GOOGLE_SHEET_ID"]),
@@ -137,19 +147,19 @@ export async function getSheetsConfigStatus(): Promise<SheetsConfigStatus> {
   };
 }
 
-async function assertConfigured() {
-  const status = await getSheetsConfigStatus();
+async function assertConfigured(organizationId?: string) {
+  const status = await getSheetsConfigStatus(organizationId);
   if (!status.configured) {
     throw new SheetsConfigError(status.missing);
   }
 }
 
-async function getSheetsClient(): Promise<{
+async function getSheetsClient(organizationId?: string): Promise<{
   sheets: sheets_v4.Sheets;
   spreadsheetId: string;
 }> {
-  await assertConfigured();
-  const layout = await getResolvedSheetsLayout();
+  await assertConfigured(organizationId);
+  const layout = await resolveLayout(organizationId);
 
   const privateKey = normalizePrivateKey(getEnv("GOOGLE_PRIVATE_KEY"));
   assertValidPrivateKey(privateKey);
@@ -246,8 +256,11 @@ function mapExpense(row: unknown[], headers: HeaderMap): Expense | null {
   };
 }
 
-async function readSheet(range: string): Promise<unknown[][]> {
-  const { sheets, spreadsheetId } = await getSheetsClient();
+async function readSheet(
+  range: string,
+  organizationId?: string,
+): Promise<unknown[][]> {
+  const { sheets, spreadsheetId } = await getSheetsClient(organizationId);
 
   try {
     const response = await sheets.spreadsheets.values.get({
@@ -276,9 +289,12 @@ async function readSheet(range: string): Promise<unknown[][]> {
   }
 }
 
-export async function readOrders(): Promise<Order[]> {
-  const layout = await getResolvedSheetsLayout();
-  const rows = await readSheet(sheetA1(layout.ordersSheet, layout.ordersRange));
+export async function readOrders(organizationId?: string): Promise<Order[]> {
+  const layout = await resolveLayout(organizationId);
+  const rows = await readSheet(
+    sheetA1(layout.ordersSheet, layout.ordersRange),
+    organizationId,
+  );
   if (rows.length === 0) return [];
 
   const headers = buildHeaderMap(rows[0] ?? []);
@@ -288,9 +304,12 @@ export async function readOrders(): Promise<Order[]> {
     .filter((order): order is Order => order !== null);
 }
 
-export async function readExpenses(): Promise<Expense[]> {
-  const layout = await getResolvedSheetsLayout();
-  const rows = await readSheet(sheetA1(layout.expensesSheet, layout.expensesRange));
+export async function readExpenses(organizationId?: string): Promise<Expense[]> {
+  const layout = await resolveLayout(organizationId);
+  const rows = await readSheet(
+    sheetA1(layout.expensesSheet, layout.expensesRange),
+    organizationId,
+  );
   if (rows.length === 0) return [];
 
   const headers = buildHeaderMap(rows[0] ?? []);
@@ -300,7 +319,10 @@ export async function readExpenses(): Promise<Expense[]> {
     .filter((expense): expense is Expense => expense !== null && Boolean(expense.dateIso));
 }
 
-export async function findOrderRowByNumber(orderNumber: string): Promise<{
+export async function findOrderRowByNumber(
+  orderNumber: string,
+  organizationId?: string,
+): Promise<{
   order: Order;
   rowNumber: number;
   statusColumn: number;
@@ -310,8 +332,11 @@ export async function findOrderRowByNumber(orderNumber: string): Promise<{
     throw new InvalidOrderNumberError(orderNumber);
   }
 
-  const layout = await getResolvedSheetsLayout();
-  const rows = await readSheet(sheetA1(layout.ordersSheet, layout.ordersRange));
+  const layout = await resolveLayout(organizationId);
+  const rows = await readSheet(
+    sheetA1(layout.ordersSheet, layout.ordersRange),
+    organizationId,
+  );
   if (rows.length === 0) {
     throw new OrderNotFoundError(normalized);
   }
@@ -340,14 +365,18 @@ export async function findOrderRowByNumber(orderNumber: string): Promise<{
   throw new OrderNotFoundError(normalized);
 }
 
-export async function findOrderByNumber(orderNumber: string): Promise<Order> {
-  const { order } = await findOrderRowByNumber(orderNumber);
+export async function findOrderByNumber(
+  orderNumber: string,
+  organizationId?: string,
+): Promise<Order> {
+  const { order } = await findOrderRowByNumber(orderNumber, organizationId);
   return order;
 }
 
 export async function updateOrderStatus(
   orderNumber: string,
   status: string,
+  organizationId?: string,
 ): Promise<Order> {
   const canonical = toCanonicalStatus(status);
   if (!canonical) {
@@ -355,9 +384,12 @@ export async function updateOrderStatus(
   }
 
   const sheetValue = toSheetStatus(canonical);
-  const layout = await getResolvedSheetsLayout();
-  const { rowNumber, statusColumn } = await findOrderRowByNumber(orderNumber);
-  const { sheets, spreadsheetId } = await getSheetsClient();
+  const layout = await resolveLayout(organizationId);
+  const { rowNumber, statusColumn } = await findOrderRowByNumber(
+    orderNumber,
+    organizationId,
+  );
+  const { sheets, spreadsheetId } = await getSheetsClient(organizationId);
   const columnLetter = String.fromCharCode(65 + statusColumn);
 
   try {
@@ -378,17 +410,17 @@ export async function updateOrderStatus(
     );
   }
 
-  return findOrderByNumber(orderNumber);
+  return findOrderByNumber(orderNumber, organizationId);
 }
 
-export async function getPublicSource(): Promise<DataSource> {
-  return (await getSheetsConfigStatus()).source;
+export async function getPublicSource(organizationId?: string): Promise<DataSource> {
+  return (await getSheetsConfigStatus(organizationId)).source;
 }
 
-export async function testSheetsConnection() {
-  const layout = await getResolvedSheetsLayout();
-  const orders = await readOrders();
-  const expenses = await readExpenses();
+export async function testSheetsConnection(organizationId?: string) {
+  const layout = await resolveLayout(organizationId);
+  const orders = await readOrders(organizationId);
+  const expenses = await readExpenses(organizationId);
   return {
     ok: true as const,
     layout: {

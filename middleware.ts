@@ -1,0 +1,120 @@
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { jwtVerify } from "jose";
+
+const SESSION_COOKIE = "cf_session";
+
+const PUBLIC_PATHS = [
+  "/login",
+  "/signup",
+  "/forgot-password",
+  "/reset-password",
+  "/invite",
+  "/p", // public published landing pages (future)
+];
+
+function getSecret() {
+  const raw =
+    process.env.AUTH_SECRET?.trim() ||
+    process.env.NEXTAUTH_SECRET?.trim() ||
+    "chic-fragrance-dev-secret-change-me";
+  return new TextEncoder().encode(raw);
+}
+
+function isPublic(pathname: string): boolean {
+  if (
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/favicon") ||
+    pathname.startsWith("/logo") ||
+    pathname.match(/\.(png|jpg|jpeg|svg|webp|ico|css|js)$/)
+  ) {
+    return true;
+  }
+  return PUBLIC_PATHS.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`),
+  );
+}
+
+async function readRole(request: NextRequest): Promise<{
+  role: string | null;
+  authenticated: boolean;
+}> {
+  const token = request.cookies.get(SESSION_COOKIE)?.value;
+  if (!token) return { role: null, authenticated: false };
+  try {
+    const { payload } = await jwtVerify(token, getSecret());
+    return {
+      authenticated: true,
+      role: typeof payload.role === "string" ? payload.role : null,
+    };
+  } catch {
+    return { role: null, authenticated: false };
+  }
+}
+
+/** Legacy client routes → /app equivalents. */
+const LEGACY_REDIRECTS: Record<string, string> = {
+  "/": "/app",
+  "/commandes": "/app/commandes",
+  "/depenses": "/app/depenses",
+  "/rapports": "/app/rapports",
+  "/produits": "/app/produits",
+  "/clients": "/app/clients",
+  "/parametres": "/app/parametres",
+  "/premium": "/app/premium",
+  "/creation-ia": "/app/creation-ia",
+  "/creation-ia/landing": "/app/landing-pages",
+  "/creation-ia/visuels": "/app/creation-ia/visuels",
+  "/creation-ia/creatifs": "/app/creation-ia/creatifs",
+  "/creation-ia/contenus": "/app/creation-ia/contenus",
+  "/automatisations": "/app/automatisations",
+  "/intelligence": "/app/intelligence",
+  "/boutique": "/app/boutique",
+};
+
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // API auth is enforced in route handlers (need full session + permissions).
+  if (pathname.startsWith("/api/")) {
+    return NextResponse.next();
+  }
+
+  const { role, authenticated } = await readRole(request);
+
+  if (isPublic(pathname)) {
+    if (authenticated && (pathname === "/login" || pathname === "/signup")) {
+      const dest = role === "PLATFORM_ADMIN" ? "/admin" : "/app";
+      return NextResponse.redirect(new URL(dest, request.url));
+    }
+    return NextResponse.next();
+  }
+
+  if (!authenticated) {
+    const login = new URL("/login", request.url);
+    login.searchParams.set("next", pathname);
+    return NextResponse.redirect(login);
+  }
+
+  // Role-based area protection
+  if (pathname.startsWith("/admin") && role !== "PLATFORM_ADMIN") {
+    return NextResponse.redirect(new URL("/app", request.url));
+  }
+
+  if (pathname.startsWith("/app") && role === "PLATFORM_ADMIN") {
+    return NextResponse.redirect(new URL("/admin", request.url));
+  }
+
+  // Legacy redirects for authenticated client users
+  if (role !== "PLATFORM_ADMIN" && LEGACY_REDIRECTS[pathname]) {
+    return NextResponse.redirect(new URL(LEGACY_REDIRECTS[pathname], request.url));
+  }
+
+  // Prefix match for nested legacy creation-ia paths already covered above.
+
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+};

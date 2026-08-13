@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { toErrorPayload } from "@/lib/errors";
 import { getSheetsConfigStatus, updateOrderStatus } from "@/lib/google-sheets";
 import { isOrderStatus } from "@/lib/types";
+import {
+  authErrorResponse,
+  requireOrganizationContext,
+  requirePermission,
+} from "@/lib/platform/session";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +16,8 @@ type RouteContext = {
 
 export async function PATCH(request: Request, context: RouteContext) {
   try {
+    await requirePermission("orders.edit");
+    const { organizationId } = await requireOrganizationContext();
     const { orderNumber } = await context.params;
     const decoded = decodeURIComponent(orderNumber ?? "").trim();
 
@@ -41,7 +48,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       );
     }
 
-    const config = await getSheetsConfigStatus();
+    const config = await getSheetsConfigStatus(organizationId);
     if (!config.configured) {
       return NextResponse.json(
         {
@@ -55,7 +62,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       );
     }
 
-    const order = await updateOrderStatus(decoded, status);
+    const order = await updateOrderStatus(decoded, status, organizationId);
 
     return NextResponse.json({
       ok: true,
@@ -64,6 +71,10 @@ export async function PATCH(request: Request, context: RouteContext) {
       order,
     });
   } catch (error) {
+    const auth = authErrorResponse(error);
+    if (auth.status === 401 || auth.status === 403) {
+      return NextResponse.json(auth.body, { status: auth.status });
+    }
     const payload = toErrorPayload(error);
     return NextResponse.json(payload, { status: payload.statusCode });
   }

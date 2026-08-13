@@ -43,4 +43,6 @@ next-env.d.ts
 
 # local workspace settings (non-secret overlay)
 /data/*.json
+/data/platform/
 !/data/.gitkeep
+!/data/platform/.gitkeep

@@ -6,7 +6,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { FeatureBadge } from "@/components/premium/feature-badge";
 import { PlanBadge } from "@/components/premium/plan-badge";
+import { UserMenu } from "@/components/user-menu";
 import type { FeatureId } from "@/lib/features";
+import type { Permission } from "@/lib/platform/permissions";
+import { useOptionalWorkspace } from "@/lib/platform/workspace-context";
 import { useCurrentPlan } from "@/lib/use-current-plan";
 
 type NavItem = {
@@ -15,30 +18,104 @@ type NavItem = {
   icon: () => JSX.Element;
   badgeKey?: "orders";
   feature?: FeatureId;
+  permission?: Permission;
 };
 
 const ACTIVITY: NavItem[] = [
-  { href: "/", label: "Tableau de bord", icon: DashboardIcon },
-  { href: "/commandes", label: "Commandes", icon: OrdersIcon, badgeKey: "orders" },
-  { href: "/depenses", label: "Dépenses", icon: SpendIcon },
-  { href: "/rapports", label: "Rapports", icon: ReportsIcon },
+  { href: "/app", label: "Tableau de bord", icon: DashboardIcon },
+  {
+    href: "/app/commandes",
+    label: "Commandes",
+    icon: OrdersIcon,
+    badgeKey: "orders",
+    permission: "orders.view",
+  },
+  {
+    href: "/app/depenses",
+    label: "Dépenses",
+    icon: SpendIcon,
+    permission: "expenses.view",
+  },
+  {
+    href: "/app/rapports",
+    label: "Rapports",
+    icon: ReportsIcon,
+    permission: "reports.view",
+  },
 ];
 
 const GROWTH: NavItem[] = [
-  { href: "/produits", label: "Produits", icon: ProductsIcon },
-  { href: "/clients", label: "Clients", icon: ClientsIcon },
-  { href: "/creation-ia", label: "Création IA", icon: SparkIcon, feature: "AI_LANDING_PAGE" },
+  {
+    href: "/app/produits",
+    label: "Produits",
+    icon: ProductsIcon,
+    permission: "products.view",
+  },
+  {
+    href: "/app/clients",
+    label: "Clients",
+    icon: ClientsIcon,
+    permission: "customers.view",
+  },
+  {
+    href: "/app/landing-pages",
+    label: "Landing Pages",
+    icon: PageIcon,
+    permission: "landing_pages.view",
+    feature: "AI_LANDING_PAGE",
+  },
+  {
+    href: "/app/creation-ia",
+    label: "Création IA",
+    icon: SparkIcon,
+    permission: "ai.use",
+    feature: "AI_LANDING_PAGE",
+  },
 ];
 
 const PREMIUM: NavItem[] = [
-  { href: "/premium", label: "Premium", icon: CrownIcon },
-  { href: "/creation-ia/visuels", label: "AI Studio", icon: StudioIcon, feature: "AI_PRODUCT_IMAGES" },
-  { href: "/creation-ia/landing", label: "Landing Pages", icon: PageIcon, feature: "AI_LANDING_PAGE" },
-  { href: "/creation-ia/creatifs", label: "Créatifs", icon: AdsIcon, feature: "AI_AD_CREATIVES" },
-  { href: "/automatisations", label: "Automatisations", icon: BoltIcon, feature: "AUTOMATIONS" },
-  { href: "/intelligence", label: "Intelligence", icon: InsightIcon, feature: "AI_INSIGHTS" },
-  { href: "/boutique", label: "Boutique", icon: StoreIcon, feature: "AI_STORE_BUILDER" },
+  { href: "/app/premium", label: "Premium", icon: CrownIcon },
+  {
+    href: "/app/creation-ia/visuels",
+    label: "AI Studio",
+    icon: StudioIcon,
+    feature: "AI_PRODUCT_IMAGES",
+    permission: "ai.use",
+  },
+  {
+    href: "/app/creation-ia/creatifs",
+    label: "Créatifs",
+    icon: AdsIcon,
+    feature: "AI_AD_CREATIVES",
+    permission: "ai.use",
+  },
+  {
+    href: "/app/automatisations",
+    label: "Automatisations",
+    icon: BoltIcon,
+    feature: "AUTOMATIONS",
+  },
+  {
+    href: "/app/intelligence",
+    label: "Intelligence",
+    icon: InsightIcon,
+    feature: "AI_INSIGHTS",
+  },
+  {
+    href: "/app/boutique",
+    label: "Boutique",
+    icon: StoreIcon,
+    feature: "AI_STORE_BUILDER",
+  },
 ];
+
+const ROLE_LABEL: Record<string, string> = {
+  OWNER: "Owner",
+  MANAGER: "Manager",
+  EMPLOYEE: "Employé",
+  VIEWER: "Viewer",
+  PLATFORM_ADMIN: "Platform Admin",
+};
 
 export function Sidebar({
   orderCount,
@@ -51,6 +128,21 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
   const { plan } = useCurrentPlan();
+  const workspace = useOptionalWorkspace();
+  const org = workspace?.session?.organization;
+  const user = workspace?.session?.user;
+  const hasPermission = workspace?.hasPermission ?? (() => true);
+
+  const orgName = org?.name || "Espace client";
+  const logoSrc = org?.logoUrl || "/logo.png";
+  const initial = (user?.name || orgName).slice(0, 1).toUpperCase();
+
+  function filterItems(items: NavItem[]) {
+    return items.filter((item) => {
+      if (!item.permission) return true;
+      return hasPermission(item.permission);
+    });
+  }
 
   return (
     <>
@@ -66,22 +158,36 @@ export function Sidebar({
         <div className="px-5 pt-5">
           <div className="overflow-hidden rounded-2xl bg-chic-forest">
             <Image
-              src="/logo.png"
-              alt="Chic Fragrance depuis 1999"
+              src={logoSrc}
+              alt={orgName}
               width={512}
               height={320}
               className="h-auto w-full object-contain"
               priority
             />
           </div>
+          <p className="mt-3 px-1 text-sm font-medium">{orgName}</p>
+          <p className="px-1 text-[10px] tracking-[0.18em] text-white/40">WORKSPACE</p>
         </div>
 
         <nav className="mt-6 flex-1 space-y-5 overflow-y-auto px-3 pb-4">
-          <NavGroup title="Activité" items={ACTIVITY} pathname={pathname} orderCount={orderCount} onClose={onClose} />
-          <NavGroup title="Croissance" items={GROWTH} pathname={pathname} orderCount={orderCount} onClose={onClose} />
+          <NavGroup
+            title="Activité"
+            items={filterItems(ACTIVITY)}
+            pathname={pathname}
+            orderCount={orderCount}
+            onClose={onClose}
+          />
+          <NavGroup
+            title="Croissance"
+            items={filterItems(GROWTH)}
+            pathname={pathname}
+            orderCount={orderCount}
+            onClose={onClose}
+          />
           <NavGroup
             title="Premium"
-            items={PREMIUM}
+            items={filterItems(PREMIUM)}
             pathname={pathname}
             orderCount={orderCount}
             onClose={onClose}
@@ -89,39 +195,56 @@ export function Sidebar({
           />
           <div>
             <p className="px-3 pb-2 text-[10px] tracking-[0.18em] text-white/35">SYSTÈME</p>
-            <Link
-              href="/parametres"
-              onClick={onClose}
-              className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm ${
-                pathname === "/parametres" ? "nav-active text-white" : "text-white/75 hover:bg-white/8 hover:text-white"
-              }`}
-            >
-              <SettingsIcon />
-              Paramètres
-            </Link>
+            {hasPermission("team.view") ? (
+              <Link
+                href="/app/team"
+                onClick={onClose}
+                className={`mb-1 flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm ${
+                  pathname.startsWith("/app/team")
+                    ? "nav-active text-white"
+                    : "text-white/75 hover:bg-white/8 hover:text-white"
+                }`}
+              >
+                <ClientsIcon />
+                Équipe
+              </Link>
+            ) : null}
+            {hasPermission("settings.view") ? (
+              <Link
+                href="/app/parametres"
+                onClick={onClose}
+                className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm ${
+                  pathname.startsWith("/app/parametres")
+                    ? "nav-active text-white"
+                    : "text-white/75 hover:bg-white/8 hover:text-white"
+                }`}
+              >
+                <SettingsIcon />
+                Paramètres
+              </Link>
+            ) : null}
           </div>
         </nav>
 
         <div className="px-3 pb-5">
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <p className="text-[11px] tracking-[0.16em] text-chic-gold">Chic Fragrance Premium</p>
+            <p className="text-[11px] tracking-[0.16em] text-chic-gold">Premium</p>
             <p className="mt-2 text-sm text-white/75">Débloquez plus d’outils</p>
             <Link
-              href="/premium"
+              href="/app/premium"
               onClick={onClose}
               className="mt-4 block rounded-xl bg-chic-emerald px-3 py-2 text-center text-sm font-semibold text-white"
             >
               Voir les plans
             </Link>
           </div>
-          <div className="mt-4 flex items-center gap-3 px-1">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-chic-gold text-sm font-semibold text-chic-forest-deep">
-              S
-            </div>
-            <div>
-              <p className="text-sm font-medium">Sofiane</p>
-              <p className="text-xs text-white/60">Administrateur</p>
-            </div>
+          <div className="mt-4">
+            <UserMenu
+              name={user?.name || "Utilisateur"}
+              roleLabel={ROLE_LABEL[user?.role || ""] || user?.role || ""}
+              initial={initial}
+              onClose={onClose}
+            />
           </div>
         </div>
       </aside>
@@ -146,10 +269,15 @@ function NavGroup({
 }) {
   return (
     <div>
-      <p className="px-3 pb-2 text-[10px] tracking-[0.18em] text-white/35">{title.toUpperCase()}</p>
+      <p className="px-3 pb-2 text-[10px] tracking-[0.18em] text-white/35">
+        {title.toUpperCase()}
+      </p>
       <div className="space-y-1">
         {items.map((item) => {
-          const active = pathname === item.href;
+          const active =
+            item.href === "/app"
+              ? pathname === "/app"
+              : pathname === item.href || pathname.startsWith(`${item.href}/`);
           const Icon = item.icon;
           return (
             <Link
@@ -168,7 +296,7 @@ function NavGroup({
                 <span className="rounded-full bg-chic-emerald px-2 py-0.5 text-[11px] font-semibold text-white">
                   {orderCount}
                 </span>
-              ) : item.href === "/premium" ? (
+              ) : item.href === "/app/premium" ? (
                 <PlanBadge plan={planBadge ?? "PRO"} />
               ) : item.feature ? (
                 <FeatureBadge feature={item.feature} />
@@ -224,6 +352,8 @@ function ClientsIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
       <circle cx="9" cy="8" r="3" stroke="currentColor" strokeWidth="1.7" />
+      <path d="M4 19c0-2.5 2.5-4 5-4s5 1.5 5 4" stroke="currentColor" strokeWidth="1.7" />
+      <circle cx="17" cy="9" r="2.2" stroke="currentColor" strokeWidth="1.7" />
     </svg>
   );
 }
@@ -231,13 +361,24 @@ function SettingsIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
       <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.7" />
+      <path
+        d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
 function SparkIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-      <path d="M12 3v4M12 17v4M4 12h4M16 12h4M6.5 6.5l2.5 2.5M15 15l2.5 2.5M17.5 6.5 15 9M9 15l-2.5 2.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      <path
+        d="M12 3v4M12 17v4M4 12h4M16 12h4M6.5 6.5l2.5 2.5M15 15l2.5 2.5M17.5 6.5 15 9M9 15l-2.5 2.5"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }

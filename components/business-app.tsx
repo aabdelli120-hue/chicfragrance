@@ -24,6 +24,7 @@ import { lastNDaysRange } from "@/lib/format";
 import { computeComparison, filterOrdersByRange } from "@/lib/metrics";
 import { toSheetStatus, toUiLabel, type CanonicalStatus } from "@/lib/status";
 import type { DataSource, Expense, Order } from "@/lib/types";
+import { useOptionalWorkspace } from "@/lib/platform/workspace-context";
 
 type PageKind = "dashboard" | "orders" | "expenses" | "placeholder";
 
@@ -179,7 +180,10 @@ function DataView({
     previousRange,
   );
   const rangedOrders = filterOrdersByRange(orders, range);
-  const greeting = title ?? "Bonjour, Sofiane 👋";
+  const workspace = useOptionalWorkspace();
+  const greeting =
+    title ??
+    `Bonjour, ${workspace?.session?.user.name?.split(" ")[0] || "équipe"} 👋`;
   const subtitle =
     placeholder ?? "Voici un aperçu de votre activité aujourd'hui.";
 

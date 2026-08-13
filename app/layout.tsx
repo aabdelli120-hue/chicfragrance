@@ -13,8 +13,9 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "Chic Fragrance — Pilotage",
-  description: "Tableau de bord de gestion Chic Fragrance, connecté à Google Sheets.",
+  title: "Chic Fragrance Platform",
+  description:
+    "Plateforme multi-tenant e-commerce — ERP, Sheets, Landing Page Studio, équipe et abonnements.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
