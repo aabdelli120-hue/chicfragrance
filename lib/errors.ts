@@ -83,11 +83,20 @@ export class InvalidStatusError extends AppError {
 
 export function toErrorPayload(error: unknown) {
   if (error instanceof AppError) {
+    const details =
+      error.details &&
+      typeof error.details === "object" &&
+      !Array.isArray(error.details) &&
+      !(error.details instanceof Error) &&
+      Object.keys(error.details as object).every((key) => key === "missing")
+        ? error.details
+        : null;
+
     return {
       ok: false as const,
       code: error.code,
       error: error.message,
-      details: error.details ?? null,
+      details,
       statusCode: error.statusCode,
     };
   }

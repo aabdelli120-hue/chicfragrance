@@ -40,11 +40,69 @@ function getEnv(name: (typeof REQUIRED_ENV)[number]): string {
   return process.env[name]?.trim() ?? "";
 }
 
+/**
+ * Normalize a service-account PEM for local .env.local and Vercel.
+ * Supports quoted values, escaped \n / \\n, CRLF, and single-line keys.
+ * Never log the returned value.
+ */
 function normalizePrivateKey(raw: string): string {
-  return raw
-    .replace(/^"|"$/g, "")
-    .replace(/\\n/g, "\n")
-    .trim();
+  let key = raw.trim().replace(/^\uFEFF/, "");
+
+  while (
+    (key.startsWith('"') && key.endsWith('"') && key.length >= 2) ||
+    (key.startsWith("'") && key.endsWith("'") && key.length >= 2)
+  ) {
+    key = key.slice(1, -1).trim();
+  }
+
+  for (let i = 0; i < 4; i += 1) {
+    const unescaped = key
+      .replace(/\\r\\n/g, "\n")
+      .replace(/\\n/g, "\n")
+      .replace(/\\r/g, "\n");
+    if (unescaped === key) break;
+    key = unescaped;
+  }
+
+  key = key.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+
+  const beginMatch = key.match(/-----BEGIN [A-Z ]*PRIVATE KEY-----/);
+  const endMatch = key.match(/-----END [A-Z ]*PRIVATE KEY-----/);
+
+  if (beginMatch && endMatch) {
+    const header = beginMatch[0];
+    const footer = endMatch[0];
+    const start = key.indexOf(header) + header.length;
+    const end = key.indexOf(footer);
+    const body = key.slice(start, end).replace(/\s+/g, "");
+    const wrapped = body.match(/.{1,64}/g)?.join("\n") ?? body;
+    return `${header}\n${wrapped}\n${footer}\n`;
+  }
+
+  return key.endsWith("\n") ? key : `${key}\n`;
+}
+
+function assertValidPrivateKey(key: string) {
+  const hasBegin = /-----BEGIN [A-Z ]*PRIVATE KEY-----/.test(key);
+  const hasEnd = /-----END [A-Z ]*PRIVATE KEY-----/.test(key);
+  const hasNewline = key.includes("\n");
+
+  if (!hasBegin || !hasEnd || !hasNewline) {
+    throw new SheetsApiError(
+      "GOOGLE_PRIVATE_KEY n'est pas un PEM valide. Utilisez une seule ligne avec des sauts de ligne échappés \\n, ou une valeur entre guillemets. La clé doit contenir BEGIN/END PRIVATE KEY.",
+    );
+  }
+}
+
+function publicSheetsErrorMessage(error: unknown, fallback: string): string {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  const safe = message.replace(/-----BEGIN[\s\S]*?-----END [A-Z ]*-----/g, "[PEM]");
+
+  if (/DECODER routines|unsupported|PEM_read|ERR_OSSL/i.test(safe)) {
+    return "GOOGLE_PRIVATE_KEY est rejeté par OpenSSL (PEM invalide ou sauts de ligne non convertis). Vérifiez les \\n échappés dans .env.local / Vercel.";
+  }
+
+  return `${fallback}: ${safe}`;
 }
 
 export function getSheetsConfigStatus(): SheetsConfigStatus {
@@ -91,17 +149,23 @@ async function getSheetsClient(): Promise<{
 }> {
   assertConfigured();
 
+  const privateKey = normalizePrivateKey(getEnv("GOOGLE_PRIVATE_KEY"));
+  assertValidPrivateKey(privateKey);
+
   try {
-    const auth = new google.auth.JWT({
-      email: getEnv("GOOGLE_SERVICE_ACCOUNT_EMAIL"),
-      key: normalizePrivateKey(getEnv("GOOGLE_PRIVATE_KEY")),
+    const auth = new google.auth.GoogleAuth({
+      credentials: {
+        client_email: getEnv("GOOGLE_SERVICE_ACCOUNT_EMAIL"),
+        private_key: privateKey,
+      },
       scopes: ["https://www.googleapis.com/auth/spreadsheets"],
     });
 
     const sheets = google.sheets({ version: "v4", auth });
     return { sheets, spreadsheetId: getEnv("GOOGLE_SHEET_ID") };
   } catch (error) {
-    throw new SheetsUnavailableError(error);
+    if (error instanceof SheetsApiError) throw error;
+    throw new SheetsApiError(publicSheetsErrorMessage(error, "Authentification Google Sheets impossible"));
   }
 }
 
@@ -186,18 +250,19 @@ async function readSheet(range: string): Promise<unknown[][]> {
 
     return (response.data.values ?? []) as unknown[][];
   } catch (error) {
+    if (error instanceof SheetsApiError) throw error;
+
     const message =
       error instanceof Error
         ? error.message
         : "Erreur inconnue lors de la lecture Google Sheets.";
 
     if (/ENOTFOUND|ECONNRESET|ETIMEDOUT|network/i.test(message)) {
-      throw new SheetsUnavailableError(error);
+      throw new SheetsUnavailableError();
     }
 
     throw new SheetsApiError(
-      `Impossible de lire la plage ${range}: ${message}`,
-      error,
+      publicSheetsErrorMessage(error, `Impossible de lire la plage ${range}`),
     );
   }
 }
@@ -290,13 +355,11 @@ export async function updateOrderStatus(
       },
     });
   } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Erreur inconnue lors de la mise à jour Google Sheets.";
     throw new SheetsApiError(
-      `Impossible de mettre à jour le statut de la commande ${orderNumber}: ${message}`,
-      error,
+      publicSheetsErrorMessage(
+        error,
+        `Impossible de mettre à jour le statut de la commande ${orderNumber}`,
+      ),
     );
   }
 
