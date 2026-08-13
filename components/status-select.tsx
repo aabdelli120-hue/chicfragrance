@@ -1,6 +1,11 @@
 "use client";
 
-import { ORDER_STATUSES, type OrderStatus } from "@/lib/types";
+import {
+  CANONICAL_STATUSES,
+  toCanonicalStatus,
+  toUiLabel,
+  type CanonicalStatus,
+} from "@/lib/status";
 import { statusClassName } from "@/lib/status-styles";
 
 export function StatusSelect({
@@ -10,23 +15,29 @@ export function StatusSelect({
 }: {
   value: string;
   disabled?: boolean;
-  onChange: (status: OrderStatus) => void;
+  onChange: (status: CanonicalStatus) => void;
 }) {
+  const canonical = toCanonicalStatus(value);
+  const selected = canonical ?? "";
+
   return (
     <select
-      value={ORDER_STATUSES.includes(value as OrderStatus) ? value : value}
+      value={selected}
       disabled={disabled}
-      onChange={(event) => onChange(event.target.value as OrderStatus)}
-      className={`min-w-[148px] rounded-full border-0 px-3 py-1.5 text-xs font-semibold outline-none ${statusClassName(value)} ${
+      onChange={(event) => {
+        const next = toCanonicalStatus(event.target.value);
+        if (next) onChange(next);
+      }}
+      className={`min-w-[148px] rounded-full border-0 px-3 py-1.5 text-xs font-semibold outline-none transition ${statusClassName(value)} ${
         disabled ? "opacity-60" : "cursor-pointer"
       }`}
     >
-      {!ORDER_STATUSES.includes(value as OrderStatus) && value ? (
-        <option value={value}>{value}</option>
+      {!canonical && value ? (
+        <option value="">{value}</option>
       ) : null}
-      {ORDER_STATUSES.map((status) => (
+      {CANONICAL_STATUSES.map((status) => (
         <option key={status} value={status}>
-          {status}
+          {toUiLabel(status)}
         </option>
       ))}
     </select>

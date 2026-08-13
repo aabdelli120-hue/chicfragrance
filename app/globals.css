@@ -56,6 +56,7 @@ input {
   border: 1px solid var(--chic-line);
   border-radius: 20px;
   box-shadow: 0 10px 30px rgba(19, 78, 58, 0.05);
+  transition: transform 200ms ease, box-shadow 200ms ease;
 }
 
 .silk-hero {
@@ -64,27 +65,21 @@ input {
     linear-gradient(135deg, #1b6e4e 0%, #0d3b2c 55%, #163028 100%);
 }
 
-.status-confirmée,
-.status-confirmee {
-  background: #e8f1ff;
-  color: #1d4ed8;
-}
-
-.status-en-préparation,
-.status-en-preparation {
-  background: #f3e8ff;
-  color: #7e22ce;
-}
-
 .status-en-livraison {
-  background: #fff4d6;
-  color: #b45309;
+  background: #f8f1d8;
+  color: #8a6a12;
 }
 
-.status-livrée,
-.status-livree {
+.status-livre,
+.status-livree,
+.status-livré {
   background: #e4f7ec;
   color: #15803d;
+}
+
+.status-injoignable {
+  background: #f8eee4;
+  color: #9a5416;
 }
 
 .status-retour {
@@ -92,8 +87,16 @@ input {
   color: #b91c1c;
 }
 
-.status-annulée,
-.status-annulee {
+.status-reporter {
+  background: #eef1f5;
+  color: #4b5563;
+}
+
+.status-unknown {
   background: #eef2f1;
   color: #4b5563;
+}
+
+.progress-ring {
+  transition: stroke-dashoffset 900ms ease;
 }

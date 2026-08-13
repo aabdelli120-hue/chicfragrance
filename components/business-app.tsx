@@ -8,10 +8,19 @@ import { KpiCards } from "@/components/kpi-cards";
 import { OrdersTable } from "@/components/orders-table";
 import { PerformanceChart } from "@/components/performance-chart";
 import { RightPanels } from "@/components/right-panels";
+import { DateRangePicker } from "@/components/date-range-picker";
 import { useToast } from "@/components/toast-provider";
-import { formatRangeLabel, lastNDaysRange } from "@/lib/format";
-import { computeMetrics, filterExpensesByRange, filterOrdersByRange } from "@/lib/metrics";
-import type { DataSource, Expense, Order, OrderStatus } from "@/lib/types";
+import {
+  previousEquivalentRange,
+  resolveDateRange,
+  formatSelectedRange,
+  type DateRange,
+  type RangePreset,
+} from "@/lib/date-range";
+import { lastNDaysRange } from "@/lib/format";
+import { computeComparison, filterOrdersByRange } from "@/lib/metrics";
+import { toSheetStatus, toUiLabel, type CanonicalStatus } from "@/lib/status";
+import type { DataSource, Expense, Order } from "@/lib/types";
 
 type PageKind = "dashboard" | "orders" | "expenses" | "placeholder";
 
@@ -46,31 +55,40 @@ function InnerApp({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updating, setUpdating] = useState<string | null>(null);
-  const [rangeDays, setRangeDays] = useState(7);
-  const range = useMemo(() => lastNDaysRange(rangeDays), [rangeDays]);
+  const [preset, setPreset] = useState<RangePreset>("7d");
+  const [customRange, setCustomRange] = useState<DateRange>(() => lastNDaysRange(7));
+  const range = useMemo(
+    () => resolveDateRange(preset, customRange),
+    [preset, customRange],
+  );
 
   useEffect(() => {
     const controller = new AbortController();
 
     async function load() {
       try {
-        const [ordersRes, expensesRes] = await Promise.all([
-          fetch("/api/orders", { cache: "no-store", signal: controller.signal }),
-          fetch("/api/expenses", { cache: "no-store", signal: controller.signal }),
-        ]);
-
+        const ordersRes = await fetch("/api/orders", {
+          cache: "no-store",
+          signal: controller.signal,
+        });
         const ordersJson = await ordersRes.json();
-        const expensesJson = await expensesRes.json();
 
         setSource(ordersJson.source ?? "unconfigured");
         setMessage(ordersJson.message ?? ordersJson.error ?? "");
         setMissing(ordersJson.missing ?? []);
         setOrders(ordersJson.orders ?? []);
-        setExpenses(expensesJson.expenses ?? []);
+        setLoading(false);
 
         if (!ordersRes.ok && ordersJson.source !== "unconfigured") {
           setError(ordersJson.error ?? "Impossible de lire les commandes.");
         }
+
+        const expensesRes = await fetch("/api/expenses", {
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        const expensesJson = await expensesRes.json();
+        setExpenses(expensesJson.expenses ?? []);
       } catch (loadError) {
         if (controller.signal.aborted) return;
         setError(
@@ -78,10 +96,7 @@ function InnerApp({
             ? loadError.message
             : "Impossible de joindre l'API locale.",
         );
-      } finally {
-        if (!controller.signal.aborted) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     }
 
@@ -105,8 +120,10 @@ function InnerApp({
         error={error}
         updating={updating}
         setUpdating={setUpdating}
-        rangeDays={rangeDays}
-        setRangeDays={setRangeDays}
+        preset={preset}
+        setPreset={setPreset}
+        customRange={customRange}
+        setCustomRange={setCustomRange}
         range={range}
       />
     </AppShell>
@@ -127,8 +144,10 @@ function DataView({
   error,
   updating,
   setUpdating,
-  rangeDays,
-  setRangeDays,
+  preset,
+  setPreset,
+  customRange,
+  setCustomRange,
   range,
 }: {
   page: PageKind;
@@ -144,37 +163,36 @@ function DataView({
   error: string | null;
   updating: string | null;
   setUpdating: (value: string | null) => void;
-  rangeDays: number;
-  setRangeDays: (value: number) => void;
-  range: { from: string; to: string };
+  preset: RangePreset;
+  setPreset: (value: RangePreset) => void;
+  customRange: DateRange;
+  setCustomRange: (value: DateRange) => void;
+  range: DateRange;
 }) {
   const { notify } = useToast();
-  const rangedOrders = filterOrdersByRange(orders, range);
-  const rangedExpenses = filterExpensesByRange(expenses, range);
-  const visibleOrders = rangedOrders.length > 0 || orders.length === 0 ? rangedOrders : orders;
-  const metrics = computeMetrics(
-    visibleOrders === orders && rangedOrders.length === 0 ? orders : rangedOrders,
-    rangedExpenses.length > 0 ? rangedExpenses : expenses,
-    rangedOrders.length > 0
-      ? range
-      : {
-          from: orders.at(-1)?.dateIso ?? range.from,
-          to: orders[0]?.dateIso ?? range.to,
-        },
+  const previousRange = previousEquivalentRange(range);
+  const { current: metrics, deltas } = computeComparison(
+    orders,
+    expenses,
+    range,
+    previousRange,
   );
+  const rangedOrders = filterOrdersByRange(orders, range);
+  const rangeLabel = formatSelectedRange(preset, range);
 
   async function handleStatusChange(
     orderNumber: string,
-    status: OrderStatus,
+    status: CanonicalStatus,
     previous: string,
   ) {
-    if (status === previous) return;
+    if (toSheetStatus(status) === toSheetStatus(previous)) return;
 
     const snapshot = orders;
+    const sheetValue = toSheetStatus(status);
     setUpdating(orderNumber);
     setOrders((current) =>
       current.map((order) =>
-        order.orderNumber === orderNumber ? { ...order, status } : order,
+        order.orderNumber === orderNumber ? { ...order, status: sheetValue } : order,
       ),
     );
 
@@ -198,7 +216,7 @@ function DataView({
         );
       }
 
-      notify("success", `Commande ${orderNumber} → ${status}`);
+      notify("success", `Commande ${orderNumber} → ${toUiLabel(status)}`);
     } catch (updateError) {
       setOrders(snapshot);
       notify(
@@ -227,26 +245,13 @@ function DataView({
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <label className="rounded-2xl bg-white/12 px-4 py-3 text-sm">
-              <span className="mb-1 block text-[11px] uppercase tracking-wide text-white/60">
-                Période
-              </span>
-              <select
-                value={rangeDays}
-                onChange={(event) => setRangeDays(Number(event.target.value))}
-                className="bg-transparent outline-none"
-              >
-                <option value={7} className="text-foreground">
-                  7 derniers jours · {formatRangeLabel(range.from, range.to)}
-                </option>
-                <option value={14} className="text-foreground">
-                  14 derniers jours
-                </option>
-                <option value={30} className="text-foreground">
-                  30 derniers jours
-                </option>
-              </select>
-            </label>
+            <DateRangePicker
+              preset={preset}
+              range={range}
+              custom={customRange}
+              onPresetChange={setPreset}
+              onCustomChange={setCustomRange}
+            />
             <button
               type="button"
               onClick={() =>
@@ -261,7 +266,9 @@ function DataView({
       </header>
 
       <div className="mt-5 space-y-4">
-        <ConnectionBanner source={source} message={message} missing={missing} />
+        {loading ? null : (
+          <ConnectionBanner source={source} message={message} missing={missing} />
+        )}
         {error ? (
           <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
             {error}
@@ -274,9 +281,9 @@ function DataView({
         ) : null}
       </div>
 
-      {page === "dashboard" ? (
+      {loading ? null : page === "dashboard" ? (
         <div className="mt-5 space-y-5">
-          <KpiCards metrics={metrics} />
+          <KpiCards metrics={metrics} deltas={deltas} rangeLabel={rangeLabel} />
           <div className="grid gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,0.9fr)]">
             <div className="space-y-5">
               <PerformanceChart metrics={metrics} />
@@ -288,7 +295,7 @@ function DataView({
                   </Link>
                 </div>
                 <OrdersTable
-                  orders={visibleOrders.slice(0, 8)}
+                  orders={rangedOrders.slice(0, 8)}
                   updating={updating}
                   onStatusChange={handleStatusChange}
                   compact
@@ -300,7 +307,7 @@ function DataView({
         </div>
       ) : null}
 
-      {page === "orders" ? (
+      {loading ? null : page === "orders" ? (
         <article className="card mt-5">
           <div className="px-5 py-4">
             <h2 className="font-serif text-xl">Toutes les commandes</h2>
@@ -316,7 +323,7 @@ function DataView({
         </article>
       ) : null}
 
-      {page === "expenses" ? (
+      {loading ? null : page === "expenses" ? (
         <article className="card mt-5 overflow-x-auto">
           <div className="px-5 py-4">
             <h2 className="font-serif text-xl">Dépenses</h2>
@@ -369,7 +376,7 @@ function DataView({
         </article>
       ) : null}
 
-      {page === "placeholder" ? (
+      {loading ? null : page === "placeholder" ? (
         <article className="card mt-5 p-8">
           <h2 className="font-serif text-2xl">{title}</h2>
           <p className="mt-3 max-w-2xl text-sm text-chic-muted">{placeholder}</p>

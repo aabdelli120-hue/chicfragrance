@@ -1,18 +1,19 @@
-import type { OrderStatus } from "@/lib/types";
+import { toCanonicalStatus, toUiLabel, type CanonicalStatus } from "@/lib/status";
 
-export const STATUS_BAR_COLORS: Record<string, string> = {
-  Confirmée: "#3b82f6",
-  "En préparation": "#8b5cf6",
-  "En livraison": "#f59e0b",
-  Livrée: "#16a34a",
-  Retour: "#dc2626",
-  Annulée: "#9ca3af",
+export const STATUS_BAR_COLORS: Record<CanonicalStatus, string> = {
+  EN_LIVRAISON: "#c9a227",
+  LIVRE: "#1b6e4e",
+  INJOIGNABLE: "#c2783a",
+  RETOUR: "#b42318",
+  REPORTER: "#6b7c93",
 };
 
 export function statusClassName(status: string) {
-  return `status-${status.toLowerCase().replace(/\s+/g, "-")}`;
+  const canonical = toCanonicalStatus(status);
+  if (!canonical) return "status-unknown";
+  return `status-${canonical.toLowerCase().replaceAll("_", "-")}`;
 }
 
-export function statusLabel(status: OrderStatus | string) {
-  return status;
+export function statusLabel(status: string) {
+  return toUiLabel(status);
 }

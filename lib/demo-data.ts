@@ -16,7 +16,7 @@ export const DEMO_ORDERS: Order[] = [
     productPrice: 12800,
     deliveryFee: 500,
     total: 13300,
-    status: "En livraison",
+    status: "En Livraison",
     notes: "",
   },
   {
@@ -30,7 +30,7 @@ export const DEMO_ORDERS: Order[] = [
     productPrice: 8900,
     deliveryFee: 500,
     total: 9400,
-    status: "Livrée",
+    status: "Livré",
     notes: "",
   },
   {
@@ -44,7 +44,7 @@ export const DEMO_ORDERS: Order[] = [
     productPrice: 14200,
     deliveryFee: 500,
     total: 14700,
-    status: "Livrée",
+    status: "Livré",
     notes: "",
   },
   {
@@ -58,7 +58,7 @@ export const DEMO_ORDERS: Order[] = [
     productPrice: 7800,
     deliveryFee: 600,
     total: 8400,
-    status: "En livraison",
+    status: "En Livraison",
     notes: "",
   },
   {
@@ -72,7 +72,7 @@ export const DEMO_ORDERS: Order[] = [
     productPrice: 6100,
     deliveryFee: 500,
     total: 6600,
-    status: "Livrée",
+    status: "Livré",
     notes: "",
   },
   {

@@ -1,10 +1,13 @@
+import { eachIsoDay, percentChange, type DateRange } from "@/lib/date-range";
 import { isDateInRange } from "@/lib/format";
-import type { Expense, Order, OrderStatus } from "@/lib/types";
+import {
+  CANONICAL_STATUSES,
+  hasCanonicalStatus,
+  type CanonicalStatus,
+} from "@/lib/status";
+import type { Expense, Order } from "@/lib/types";
 
-export type DateRange = {
-  from: string;
-  to: string;
-};
+export type { DateRange };
 
 export type DashboardMetrics = {
   revenue: number;
@@ -12,28 +15,56 @@ export type DashboardMetrics = {
   deliveredCount: number;
   inDeliveryCount: number;
   returnCount: number;
-  cancelledCount: number;
-  confirmedCount: number;
-  preparingCount: number;
-  deliveryRate: number;
-  returnRate: number;
+  unreachableCount: number;
+  reporterCount: number;
+  deliveryRate: number | null;
+  returnRate: number | null;
   adSpend: number;
   collected: number;
-  sheetNet: number | null;
+  netAfterAds: number;
   cpaReel: number | null;
   costPerDelivery: number | null;
   roas: number | null;
-  statusCounts: Record<OrderStatus | string, number>;
+  statusCounts: Record<CanonicalStatus, number>;
   dailySeries: Array<{
     date: string;
     collected: number;
     spend: number;
     net: number;
   }>;
+  adShare: number;
 };
 
-function countStatus(orders: Order[], status: string) {
-  return orders.filter((order) => order.status === status).length;
+export type MetricDelta = {
+  current: number;
+  previous: number;
+  change: number | null;
+};
+
+export type DashboardComparison = {
+  revenue: MetricDelta;
+  orderCount: MetricDelta;
+  deliveredCount: MetricDelta;
+  inDeliveryCount: MetricDelta;
+  returnCount: MetricDelta;
+  unreachableCount: MetricDelta;
+  adSpend: MetricDelta;
+  netAfterAds: MetricDelta;
+  deliveryRate: MetricDelta;
+};
+
+function countCanonical(orders: Order[], status: CanonicalStatus) {
+  return orders.filter((order) => hasCanonicalStatus(order, status)).length;
+}
+
+function ratio(numerator: number, denominator: number): number | null {
+  if (!denominator) return null;
+  return numerator / denominator;
+}
+
+function percent(numerator: number, denominator: number): number | null {
+  const value = ratio(numerator, denominator);
+  return value === null ? null : value * 100;
 }
 
 export function filterOrdersByRange(orders: Order[], range: DateRange) {
@@ -54,52 +85,31 @@ export function computeMetrics(
   const rangedOrders = filterOrdersByRange(orders, range);
   const rangedExpenses = filterExpensesByRange(expenses, range);
 
-  const delivered = rangedOrders.filter((order) => order.status === "Livrée");
-  const revenue = delivered.reduce((sum, order) => sum + (order.total ?? 0), 0);
+  const delivered = rangedOrders.filter((order) => hasCanonicalStatus(order, "LIVRE"));
+  const collected = delivered.reduce((sum, order) => sum + (order.total ?? 0), 0);
   const orderCount = rangedOrders.length;
   const deliveredCount = delivered.length;
-  const inDeliveryCount = countStatus(rangedOrders, "En livraison");
-  const returnCount = countStatus(rangedOrders, "Retour");
-  const cancelledCount = countStatus(rangedOrders, "Annulée");
-  const confirmedCount = countStatus(rangedOrders, "Confirmée");
-  const preparingCount = countStatus(rangedOrders, "En préparation");
-
+  const inDeliveryCount = countCanonical(rangedOrders, "EN_LIVRAISON");
+  const returnCount = countCanonical(rangedOrders, "RETOUR");
+  const unreachableCount = countCanonical(rangedOrders, "INJOIGNABLE");
+  const reporterCount = countCanonical(rangedOrders, "REPORTER");
   const adSpend = rangedExpenses.reduce(
     (sum, expense) => sum + (expense.spendDz ?? 0),
     0,
   );
-  const collectedFromSheet = rangedExpenses.reduce(
-    (sum, expense) => sum + (expense.collected ?? 0),
-    0,
-  );
-  const collected = collectedFromSheet > 0 ? collectedFromSheet : revenue;
-  const sheetNetValues = rangedExpenses
-    .map((expense) => expense.net)
-    .filter((value): value is number => value !== null);
-  const sheetNet =
-    sheetNetValues.length > 0
-      ? sheetNetValues.reduce((sum, value) => sum + value, 0)
-      : collected - adSpend;
 
-  const latestExpense = [...rangedExpenses].reverse()[0];
-  const cpaReel = latestExpense?.cpaReel ?? (orderCount ? adSpend / orderCount : null);
-  const costPerDelivery = deliveredCount ? adSpend / deliveredCount : null;
-  const roas = adSpend > 0 ? collected / adSpend : null;
-
-  const statusCounts: Record<string, number> = {
-    Confirmée: confirmedCount,
-    "En préparation": preparingCount,
-    "En livraison": inDeliveryCount,
-    Livrée: deliveredCount,
-    Retour: returnCount,
-    Annulée: cancelledCount,
-  };
+  const statusCounts = Object.fromEntries(
+    CANONICAL_STATUSES.map((status) => [status, countCanonical(rangedOrders, status)]),
+  ) as Record<CanonicalStatus, number>;
 
   const byDay = new Map<string, { collected: number; spend: number }>();
+  for (const day of eachIsoDay(range)) {
+    byDay.set(day, { collected: 0, spend: 0 });
+  }
   for (const order of rangedOrders) {
     if (!order.dateIso) continue;
     const current = byDay.get(order.dateIso) ?? { collected: 0, spend: 0 };
-    if (order.status === "Livrée") {
+    if (hasCanonicalStatus(order, "LIVRE")) {
       current.collected += order.total ?? 0;
     }
     byDay.set(order.dateIso, current);
@@ -121,23 +131,55 @@ export function computeMetrics(
     }));
 
   return {
-    revenue,
+    revenue: collected,
     orderCount,
     deliveredCount,
     inDeliveryCount,
     returnCount,
-    cancelledCount,
-    confirmedCount,
-    preparingCount,
-    deliveryRate: orderCount ? (deliveredCount / orderCount) * 100 : 0,
-    returnRate: orderCount ? (returnCount / orderCount) * 100 : 0,
+    unreachableCount,
+    reporterCount,
+    deliveryRate: percent(deliveredCount, orderCount),
+    returnRate: percent(returnCount, orderCount),
     adSpend,
     collected,
-    sheetNet,
-    cpaReel,
-    costPerDelivery,
-    roas,
+    netAfterAds: collected - adSpend,
+    cpaReel: ratio(adSpend, orderCount),
+    costPerDelivery: ratio(adSpend, deliveredCount),
+    roas: ratio(collected, adSpend),
     statusCounts,
     dailySeries,
+    adShare: adSpend > 0 ? 100 : 0,
+  };
+}
+
+export function computeComparison(
+  orders: Order[],
+  expenses: Expense[],
+  currentRange: DateRange,
+  previousRange: DateRange,
+): { current: DashboardMetrics; previous: DashboardMetrics; deltas: DashboardComparison } {
+  const current = computeMetrics(orders, expenses, currentRange);
+  const previous = computeMetrics(orders, expenses, previousRange);
+
+  const delta = (currentValue: number, previousValue: number): MetricDelta => ({
+    current: currentValue,
+    previous: previousValue,
+    change: percentChange(currentValue, previousValue),
+  });
+
+  return {
+    current,
+    previous,
+    deltas: {
+      revenue: delta(current.collected, previous.collected),
+      orderCount: delta(current.orderCount, previous.orderCount),
+      deliveredCount: delta(current.deliveredCount, previous.deliveredCount),
+      inDeliveryCount: delta(current.inDeliveryCount, previous.inDeliveryCount),
+      returnCount: delta(current.returnCount, previous.returnCount),
+      unreachableCount: delta(current.unreachableCount, previous.unreachableCount),
+      adSpend: delta(current.adSpend, previous.adSpend),
+      netAfterAds: delta(current.netAfterAds, previous.netAfterAds),
+      deliveryRate: delta(current.deliveryRate ?? 0, previous.deliveryRate ?? 0),
+    },
   };
 }

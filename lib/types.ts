@@ -1,13 +1,8 @@
-export const ORDER_STATUSES = [
-  "Confirmée",
-  "En préparation",
-  "En livraison",
-  "Livrée",
-  "Retour",
-  "Annulée",
-] as const;
+import { UI_STATUS_OPTIONS, isOrderStatus, type OrderStatus } from "@/lib/status";
 
-export type OrderStatus = (typeof ORDER_STATUSES)[number];
+export const ORDER_STATUSES = UI_STATUS_OPTIONS;
+export type { CanonicalStatus, OrderStatus } from "@/lib/status";
+export { isOrderStatus };
 
 export type DataSource = "google-sheets" | "demo" | "unconfigured";
 
@@ -47,7 +42,3 @@ export type SheetsConfigStatus = {
   missing: string[];
   message: string;
 };
-
-export function isOrderStatus(value: string): value is OrderStatus {
-  return (ORDER_STATUSES as readonly string[]).includes(value);
-}

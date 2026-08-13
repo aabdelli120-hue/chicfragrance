@@ -8,13 +8,12 @@ import {
   SheetsUnavailableError,
 } from "@/lib/errors";
 import { normalizeOrderNumber, parseNumber, parseSheetDate } from "@/lib/format";
-import {
-  isOrderStatus,
-  type DataSource,
-  type Expense,
-  type Order,
-  type OrderStatus,
-  type SheetsConfigStatus,
+import { toCanonicalStatus, toSheetStatus, type CanonicalStatus } from "@/lib/status";
+import type {
+  DataSource,
+  Expense,
+  Order,
+  SheetsConfigStatus,
 } from "@/lib/types";
 
 const COMMANDES_SHEET = "COMMANDES";
@@ -188,6 +187,10 @@ function cell(row: unknown[], headers: HeaderMap, ...keys: string[]): string {
   return "";
 }
 
+function statusColumnIndex(headers: HeaderMap): number {
+  return headers[normalizeHeader("Statut")] ?? headers[normalizeHeader("Status")] ?? 9;
+}
+
 function mapOrder(row: unknown[], headers: HeaderMap): Order | null {
   const orderNumber = normalizeOrderNumber(
     cell(row, headers, "N° Commande", "N Commande", "Commande", "orderNumber"),
@@ -196,6 +199,9 @@ function mapOrder(row: unknown[], headers: HeaderMap): Order | null {
 
   const rawDate = cell(row, headers, "Date");
   const parsedDate = parseSheetDate(rawDate);
+  const statusIndex = statusColumnIndex(headers);
+  const namedStatus = cell(row, headers, "Statut", "Status");
+  const status = namedStatus || String(row[statusIndex] ?? "").trim();
 
   return {
     orderNumber,
@@ -208,7 +214,7 @@ function mapOrder(row: unknown[], headers: HeaderMap): Order | null {
     productPrice: parseNumber(cell(row, headers, "Prix Produit")),
     deliveryFee: parseNumber(cell(row, headers, "Livraison")),
     total: parseNumber(cell(row, headers, "Total Commande", "Total")),
-    status: cell(row, headers, "Statut", "Status"),
+    status,
     notes: cell(row, headers, "Notes"),
   };
 }
@@ -286,7 +292,7 @@ export async function readExpenses(): Promise<Expense[]> {
   return rows
     .slice(1)
     .map((row) => mapExpense(row, headers))
-    .filter((expense): expense is Expense => expense !== null);
+    .filter((expense): expense is Expense => expense !== null && Boolean(expense.dateIso));
 }
 
 export async function findOrderRowByNumber(orderNumber: string): Promise<{
@@ -309,7 +315,7 @@ export async function findOrderRowByNumber(orderNumber: string): Promise<{
     headers[normalizeHeader("N° Commande")] ??
     headers[normalizeHeader("N Commande")] ??
     1;
-  const statusColumn = headers[normalizeHeader("Statut")] ?? 9;
+  const statusColumn = statusColumnIndex(headers);
 
   for (let index = 1; index < rows.length; index += 1) {
     const row = rows[index] ?? [];
@@ -337,10 +343,12 @@ export async function updateOrderStatus(
   orderNumber: string,
   status: string,
 ): Promise<Order> {
-  if (!isOrderStatus(status)) {
+  const canonical = toCanonicalStatus(status);
+  if (!canonical) {
     throw new InvalidStatusError(status);
   }
 
+  const sheetValue = toSheetStatus(canonical);
   const { rowNumber, statusColumn } = await findOrderRowByNumber(orderNumber);
   const { sheets, spreadsheetId } = await getSheetsClient();
   const columnLetter = String.fromCharCode(65 + statusColumn);
@@ -351,7 +359,7 @@ export async function updateOrderStatus(
       range: `${COMMANDES_SHEET}!${columnLetter}${rowNumber}`,
       valueInputOption: "USER_ENTERED",
       requestBody: {
-        values: [[status]],
+        values: [[sheetValue]],
       },
     });
   } catch (error) {
@@ -370,4 +378,4 @@ export function getPublicSource(): DataSource {
   return getSheetsConfigStatus().source;
 }
 
-export type { OrderStatus };
+export type { CanonicalStatus };
