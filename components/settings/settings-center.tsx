@@ -1,12 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { CANONICAL_STATUSES, SHEET_STATUS, UI_STATUS } from "@/lib/status";
-import { PLANS } from "@/lib/plans";
-import { FEATURES } from "@/lib/features";
-import { formatDzd } from "@/lib/format";
+import { PremiumSettings } from "@/components/settings/premium-settings";
+import type { PremiumConfig } from "@/lib/premium-config";
 import { useToast } from "@/components/toast-provider";
 
 type Section = "general" | "sheets" | "status" | "premium" | "account";
@@ -34,6 +32,7 @@ type SettingsPayload = {
     plan: string;
     status: string;
   };
+  premium: PremiumConfig;
   secrets: {
     serviceAccountConfigured: boolean;
     privateKeyConfigured: boolean;
@@ -222,30 +221,11 @@ export function SettingsCenter() {
         ) : null}
 
         {section === "premium" ? (
-          <section className="card p-6">
-            <h2 className="font-serif text-2xl">Premium</h2>
-            <p className="mt-2 text-sm text-chic-muted">Plan actuel: {settings.subscription.plan}</p>
-            <p className="mt-1 text-sm text-chic-muted">Paiement: bientôt disponible. Aucun abonnement n&apos;est facturé pour le moment.</p>
-            <div className="mt-5 grid gap-4 md:grid-cols-3">
-              {PLANS.map((plan) => (
-                <div key={plan.id} className="rounded-2xl border border-chic-line p-4">
-                  <p className="text-xs uppercase tracking-wide text-chic-gold">{plan.name}</p>
-                  <p className="mt-2 font-serif text-2xl">{formatDzd(plan.price)}</p>
-                  <p className="mt-2 text-sm text-chic-muted">{plan.description}</p>
-                </div>
-              ))}
-            </div>
-            <ul className="mt-5 space-y-2 text-sm">
-              {FEATURES.filter((feature) => feature.requiredPlan !== "ESSENTIAL").map((feature) => (
-                <li key={feature.id}>
-                  {feature.label} · {feature.requiredPlan} · {feature.available ? "disponible" : "bientôt"}
-                </li>
-              ))}
-            </ul>
-            <Link href="/premium" className="mt-6 inline-flex rounded-xl bg-chic-emerald px-4 py-2 text-sm font-semibold text-white">
-              Voir les plans
-            </Link>
-          </section>
+          <PremiumSettings
+            config={settings.premium}
+            saving={saving}
+            onSave={(premium) => void save({ premium })}
+          />
         ) : null}
 
         {section === "account" ? (

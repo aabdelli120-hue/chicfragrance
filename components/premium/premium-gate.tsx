@@ -33,11 +33,11 @@ export function PremiumGate({
       <div className="card max-w-lg p-5">
         <div className="flex items-center justify-between gap-2">
           <p className="text-[11px] uppercase tracking-[0.14em] text-chic-muted">Module préparé</p>
-          <PlanBadge plan={required === "ELITE" ? "ELITE" : "PRO"} />
+          <PlanBadge plan={required} />
         </div>
         <h2 className="mt-3 text-lg font-semibold tracking-tight">{title}</h2>
         <p className="mt-2 text-sm text-chic-muted">{description}</p>
-        <p className="mt-2 text-sm">Bientôt disponible · inclus dans {required === "ELITE" ? "Elite" : "Pro"}.</p>
+        <p className="mt-2 text-sm">Bientôt disponible · inclus dans {required}.</p>
       </div>
     );
   }

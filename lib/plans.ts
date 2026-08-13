@@ -1,5 +1,21 @@
+/**
+ * Internal plan identifiers. These are persisted (organizations.plan,
+ * subscriptions.planId) so they stay stable; the commercial names shown in the
+ * product are Essential / Pro / Elite (see `PLAN_DISPLAY_NAME`).
+ */
 export const PLAN_IDS = ["FREE", "ESSENTIAL", "PRO", "ELITE"] as const;
 export type PlanId = (typeof PLAN_IDS)[number];
+
+/**
+ * Commercial offers displayed in Premium. `FREE` is the implicit default, never
+ * sold. `CUSTOM` (SUR MESURE) is quoted, never stored as a subscription tier.
+ */
+export const OFFER_IDS = ["ESSENTIAL", "PRO", "ELITE", "CUSTOM"] as const;
+export type OfferId = (typeof OFFER_IDS)[number];
+
+/** Offers compared side by side in the capability matrix. */
+export const TIER_IDS = ["ESSENTIAL", "PRO", "ELITE"] as const;
+export type TierId = (typeof TIER_IDS)[number];
 
 export const PLAN_RANK: Record<PlanId, number> = {
   FREE: 0,
@@ -8,22 +24,111 @@ export const PLAN_RANK: Record<PlanId, number> = {
   ELITE: 3,
 };
 
+/** Commercial names. Internal ids are never shown to customers. */
+export const PLAN_DISPLAY_NAME: Record<PlanId, string> = {
+  FREE: "Gratuit",
+  ESSENTIAL: "Essential",
+  PRO: "Pro",
+  ELITE: "Elite",
+};
+
+export const OFFER_DISPLAY_NAME: Record<OfferId, string> = {
+  ESSENTIAL: "Essential",
+  PRO: "Pro",
+  ELITE: "Elite",
+  CUSTOM: "Sur mesure",
+};
+
+export function isPlanId(id: OfferId): id is Exclude<OfferId, "CUSTOM"> {
+  return id !== "CUSTOM";
+}
+
+export type PlanAvailability = "available" | "partial" | "coming-soon";
+
+export const AVAILABILITY_LABEL: Record<PlanAvailability, string> = {
+  available: "Disponible",
+  partial: "Partiellement disponible",
+  "coming-soon": "Bientôt disponible",
+};
+
+/** Small technical labels shown on each card as software capability levels. */
+export const CAPABILITY_LABELS = [
+  "MANAGEMENT",
+  "ANALYTICS",
+  "AI",
+  "AUTOMATION",
+  "STORE",
+] as const;
+
+export type CapabilityLabel = (typeof CAPABILITY_LABELS)[number];
+
 export type PlanCapability = {
-  label: string;
+  label: CapabilityLabel;
   value: string;
+  tone?: "on" | "partial" | "soon" | "off";
+};
+
+/**
+ * Message templates. Tokens replaced at send time:
+ * `{planName}`, `{price}`, `{ownerName}`, `{storeName}`.
+ */
+export type PlanContactMessage = {
+  whatsapp: string;
+  emailSubject: string;
+  emailBody: string;
 };
 
 export type PlanDefinition = {
-  id: Exclude<PlanId, "FREE">;
+  id: OfferId;
   name: string;
-  price: number;
+  /** Monthly amount in DZD. `null` means the offer is quoted (sur devis). */
+  price: number | null;
+  period: "month" | null;
+  quoteLabel?: string;
+  description: string;
   badge?: string;
   recommended?: boolean;
-  description: string;
+  accent: "neutral" | "emerald" | "gold";
   cta: string;
+  category: string;
   features: string[];
   comingSoon?: string[];
   capabilities: PlanCapability[];
+  availability: PlanAvailability;
+  contactMessage: PlanContactMessage;
+};
+
+const WHATSAPP_SUBSCRIBE = [
+  "Bonjour, je souhaite souscrire à l'offre {planName} à {price}/mois sur Chic Fragrance.",
+  "",
+  "Nom:",
+  "{ownerName}",
+  "",
+  "Boutique:",
+  "{storeName}",
+  "",
+  "Offre:",
+  "{planName}",
+].join("\n");
+
+const EMAIL_SUBSCRIBE = [
+  "Bonjour,",
+  "",
+  "Je souhaite souscrire à l'offre {planName} à {price}/mois.",
+  "",
+  "Nom:",
+  "{ownerName}",
+  "",
+  "Boutique:",
+  "{storeName}",
+  "",
+  "Merci.",
+].join("\n");
+
+const CONTACT: PlanContactMessage = {
+  whatsapp: WHATSAPP_SUBSCRIBE,
+  emailSubject: "Demande d'abonnement — Chic Fragrance — {planName}",
+  emailBody: EMAIL_SUBSCRIBE,
 };
 
 export const PLANS: PlanDefinition[] = [
@@ -31,81 +136,160 @@ export const PLANS: PlanDefinition[] = [
     id: "ESSENTIAL",
     name: "Essential",
     price: 900,
+    period: "month",
     description: "Pour les marchands qui ont besoin d’un tableau de bord opérationnel fiable.",
+    accent: "neutral",
     cta: "Choisir Essential",
+    category: "MANAGEMENT",
+    availability: "available",
     capabilities: [
-      { label: "Pilotage", value: "Dashboard" },
-      { label: "Données", value: "Sheets" },
-      { label: "IA", value: "—" },
+      { label: "MANAGEMENT", value: "COMPLET", tone: "on" },
+      { label: "ANALYTICS", value: "BASIQUE", tone: "partial" },
+      { label: "AI", value: "NON INCLUS", tone: "off" },
+      { label: "STORE", value: "NON INCLUS", tone: "off" },
     ],
     features: [
       "Dashboard",
       "Commandes",
-      "Google Sheets",
       "Dépenses",
+      "Synchronisation Google Sheets",
       "Suivi des livraisons",
-      "Filtres avancés",
-      "Rapports essentiels",
-      "Synchronisation des données",
+      "Rapports basiques",
+      "Analytics basiques",
+      "Filtres par période",
     ],
+    contactMessage: CONTACT,
   },
   {
     id: "PRO",
     name: "Pro",
     price: 1900,
+    period: "month",
     badge: "Le plus populaire",
     recommended: true,
     description: "Analytics, prévisions et studio IA pour développer et automatiser l’activité.",
+    accent: "emerald",
     cta: "Passer à Pro",
+    category: "ANALYTICS + AI",
+    availability: "partial",
     capabilities: [
-      { label: "Pilotage", value: "Avancé" },
-      { label: "Données", value: "Sheets" },
-      { label: "IA", value: "Studio" },
+      { label: "ANALYTICS", value: "ADVANCED", tone: "on" },
+      { label: "AI", value: "INCLUDED", tone: "on" },
+      { label: "AUTOMATION", value: "PARTIAL", tone: "partial" },
+      { label: "STORE", value: "COMING SOON", tone: "soon" },
     ],
     features: [
       "Tout Essential",
       "Analytics avancés",
       "Comparaison des périodes",
-      "Prévisions commerciales",
-      "AI Landing Page",
-      "AI Product Studio",
-      "Génération de visuels",
-      "Création de textes publicitaires",
-      "Creative variations",
-      "Insights IA",
+      "Performance publicitaire",
+      "CPA / ROAS / taux de livraison",
       "Rapports avancés",
+      "Assistant marketing IA",
+      "Génération de landing pages IA",
+      "Génération de visuels produit",
+      "Génération de textes publicitaires",
+      "Variations de créatifs",
+      "Business insights",
     ],
+    contactMessage: CONTACT,
   },
   {
     id: "ELITE",
     name: "Elite",
     price: 2900,
+    period: "month",
     badge: "Suite complète",
     description: "Une suite d’outils pour gérer, analyser, automatiser et développer votre e-commerce.",
+    accent: "gold",
     cta: "Choisir Elite",
+    category: "AI + AUTOMATION + STORE",
+    availability: "partial",
     capabilities: [
-      { label: "Pilotage", value: "Complet" },
-      { label: "IA", value: "Assistant" },
-      { label: "Store", value: "Builder" },
+      { label: "ANALYTICS", value: "ADVANCED", tone: "on" },
+      { label: "AI", value: "FULL SUITE", tone: "on" },
+      { label: "AUTOMATION", value: "INCLUDED", tone: "partial" },
+      { label: "STORE", value: "COMING SOON", tone: "soon" },
     ],
     features: [
       "Tout Pro",
-      "AI Store Builder",
-      "Création de boutique",
-      "Multi-store",
-      "Branding personnalisé",
-      "Analytics avancés",
+      "AI Product Studio",
+      "Creative Studio avancé",
+      "Landing pages avancées",
       "AI Business Assistant",
       "Automatisations",
-      "Rapports premium",
-      "Priorité nouvelles fonctionnalités",
+      "Business intelligence avancée",
+      "Branding personnalisé",
+      "Support prioritaire",
+      "Accès anticipé aux nouveautés",
     ],
+    comingSoon: ["Store Builder"],
+    contactMessage: CONTACT,
+  },
+  {
+    id: "CUSTOM",
+    name: "SUR MESURE",
+    price: null,
+    period: null,
+    quoteLabel: "Sur devis",
+    description: "Pour les activités qui ont besoin d'une configuration dédiée.",
+    accent: "neutral",
+    cta: "Parler à un expert",
+    category: "PLATFORM",
+    availability: "available",
+    capabilities: [
+      { label: "MANAGEMENT", value: "SUR MESURE", tone: "on" },
+      { label: "AUTOMATION", value: "SUR MESURE", tone: "on" },
+      { label: "STORE", value: "SUR ÉTUDE", tone: "partial" },
+    ],
+    features: [
+      "Intégrations personnalisées",
+      "Boutiques multiples",
+      "Automatisation avancée",
+      "Dashboards personnalisés",
+      "API / intégrations",
+      "Configuration d'équipe",
+      "Workflows métier sur mesure",
+    ],
+    contactMessage: {
+      whatsapp: [
+        "Bonjour, je souhaite étudier une offre sur mesure pour mon activité sur Chic Fragrance.",
+        "",
+        "Nom:",
+        "{ownerName}",
+        "",
+        "Boutique:",
+        "{storeName}",
+        "",
+        "Offre:",
+        "{planName}",
+      ].join("\n"),
+      emailSubject: "Demande d'offre sur mesure — Chic Fragrance",
+      emailBody: [
+        "Bonjour,",
+        "",
+        "Je souhaite étudier une offre sur mesure pour mon activité.",
+        "",
+        "Nom:",
+        "{ownerName}",
+        "",
+        "Boutique:",
+        "{storeName}",
+        "",
+        "Merci.",
+      ].join("\n"),
+    },
   },
 ];
 
+export function findPlan(id: OfferId): PlanDefinition | undefined {
+  return PLANS.find((plan) => plan.id === id);
+}
+
 export function planLabel(plan: PlanId): string {
-  if (plan === "ESSENTIAL") return "Essential";
-  if (plan === "PRO") return "Pro";
-  if (plan === "ELITE") return "Elite";
-  return "Gratuit";
+  return PLAN_DISPLAY_NAME[plan];
+}
+
+export function offerLabel(offer: OfferId): string {
+  return OFFER_DISPLAY_NAME[offer];
 }

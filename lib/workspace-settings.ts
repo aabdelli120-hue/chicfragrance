@@ -6,6 +6,10 @@ import {
   DEFAULT_SHEETS_LAYOUT,
   type SheetsLayout,
 } from "@/lib/sheets-config";
+import {
+  DEFAULT_PREMIUM_CONTACT,
+  type PremiumConfig,
+} from "@/lib/premium-config";
 import type { PlanId } from "@/lib/plans";
 
 export type WorkspaceSettings = {
@@ -33,6 +37,7 @@ export type WorkspaceSettings = {
     startedAt: string | null;
     expiresAt: string | null;
   };
+  premium: PremiumConfig;
 };
 
 const SETTINGS_PATH = path.join(process.cwd(), "data", "workspace-settings.json");
@@ -53,7 +58,7 @@ export function defaultWorkspaceSettings(): WorkspaceSettings {
       expensesRange: process.env.GOOGLE_EXPENSES_RANGE?.trim() || DEFAULT_SHEETS_LAYOUT.expensesRange,
     },
     account: {
-      name: "Chic Fragrance",
+      name: "Sofiane",
       email: "administrateur@chicfragrance.dz",
       role: "Administrateur",
     },
@@ -62,6 +67,14 @@ export function defaultWorkspaceSettings(): WorkspaceSettings {
       status: "inactive",
       startedAt: null,
       expiresAt: null,
+    },
+    premium: {
+      contact: {
+        whatsappNumber:
+          process.env.CHIC_BUSINESS_WHATSAPP?.trim() || DEFAULT_PREMIUM_CONTACT.whatsappNumber,
+        email: process.env.CHIC_BUSINESS_EMAIL?.trim() || DEFAULT_PREMIUM_CONTACT.email,
+      },
+      plans: {},
     },
   };
 }
@@ -84,6 +97,10 @@ function mergeSettings(
     sheets: { ...base.sheets, ...overlay.sheets },
     account: { ...base.account, ...overlay.account },
     subscription: { ...base.subscription, ...overlay.subscription },
+    premium: {
+      contact: { ...base.premium.contact, ...overlay.premium?.contact },
+      plans: { ...base.premium.plans, ...overlay.premium?.plans },
+    },
   };
 }
 
@@ -128,6 +145,8 @@ export function publicSettingsPayload(settings: WorkspaceSettings) {
     },
     account: settings.account,
     subscription: settings.subscription,
+    // Business contact details and commercial overrides only — no credentials.
+    premium: settings.premium,
     secrets: {
       serviceAccountConfigured: Boolean(process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL?.trim()),
       privateKeyConfigured: Boolean(process.env.GOOGLE_PRIVATE_KEY?.trim()),

@@ -1,27 +1,33 @@
+import { PLAN_DISPLAY_NAME, type PlanId } from "@/lib/plans";
+
+function labelFor(plan: PlanId | string): string {
+  return plan in PLAN_DISPLAY_NAME ? PLAN_DISPLAY_NAME[plan as PlanId] : plan;
+}
+
 export function PlanBadge({
   plan,
   className = "",
 }: {
-  plan: "ESSENTIAL" | "PRO" | "ELITE" | string;
+  plan: PlanId | string;
   className?: string;
 }) {
-  const elite = plan === "ELITE";
+  const tone =
+    plan === "ELITE"
+      ? "border-chic-gold/45 bg-chic-gold/12 text-chic-gold"
+      : plan === "PRO"
+        ? "border-chic-emerald/25 bg-chic-mint text-chic-emerald"
+        : "border-chic-line bg-white text-chic-muted";
+
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold tracking-[0.12em] ${
-        elite
-          ? "border border-chic-gold/40 bg-chic-gold/12 text-chic-gold"
-          : plan === "PRO"
-            ? "border border-chic-emerald/25 bg-chic-mint text-chic-emerald"
-            : "border border-chic-line bg-white text-chic-muted"
-      } ${className}`}
+      className={`inline-flex items-center whitespace-nowrap rounded-full border px-2 py-0.5 text-[10px] font-semibold tracking-[0.12em] ${tone} ${className}`}
     >
-      {plan}
+      {labelFor(plan)}
     </span>
   );
 }
 
-export function ComingSoonNote({ plan = "PRO" }: { plan?: "PRO" | "ELITE" }) {
+export function ComingSoonNote({ plan = "PRO" }: { plan?: PlanId }) {
   return (
     <div className="mt-3 flex items-center gap-2 text-xs text-chic-muted">
       <PlanBadge plan={plan} />

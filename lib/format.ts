@@ -44,6 +44,15 @@ export function formatDzd(value: number | null | undefined): string {
   return `${formatInt(value)} DZD`;
 }
 
+/** Short price form used in customer-facing messages, e.g. "1 900 DA". */
+export function formatDa(value: number | null | undefined): string {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return "—";
+  }
+
+  return `${formatInt(value)} DA`;
+}
+
 export function formatUsd(value: number | null | undefined): string {
   if (value === null || value === undefined || Number.isNaN(value)) {
     return "—";

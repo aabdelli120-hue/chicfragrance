@@ -37,41 +37,9 @@ function FlowArrow() {
   );
 }
 
-export function DataArchitecture() {
-  return (
-    <section className="card overflow-hidden p-5">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-[11px] uppercase tracking-[0.16em] text-chic-muted">Architecture données</p>
-          <h2 className="mt-1 text-lg font-semibold tracking-tight">Tout est connecté</h2>
-        </div>
-        <span className="rounded-full bg-chic-mint px-2.5 py-1 text-[10px] font-medium text-chic-emerald">
-          Source unique
-        </span>
-      </div>
-      <div className="mt-5 space-y-3">
-        <Nodes items={[{ id: "sheets", label: "Google Sheets", sub: "Source de vérité" }]} />
-        <div className="ml-4 h-6 w-px bg-gradient-to-b from-chic-emerald/50 to-chic-emerald/10" />
-        <Nodes items={[{ id: "core", label: "Chic Fragrance", sub: "Système de gestion", accent: true }]} />
-        <div className="ml-4 h-6 w-px bg-gradient-to-b from-chic-emerald/40 to-transparent" />
-        <Nodes
-          items={[
-            { id: "orders", label: "Orders" },
-            { id: "analytics", label: "Analytics" },
-            { id: "ai", label: "AI" },
-            { id: "reports", label: "Reports" },
-          ]}
-        />
-        <div className="ml-4 h-6 w-px bg-gradient-to-b from-chic-emerald/30 to-transparent" />
-        <Nodes items={[{ id: "decisions", label: "Business decisions" }]} />
-      </div>
-    </section>
-  );
-}
-
 export function EcosystemFlow() {
   return (
-    <section id="ecosysteme" className="card p-5">
+    <section id="ecosysteme" className="card scroll-mt-6 p-5">
       <p className="text-[11px] uppercase tracking-[0.16em] text-chic-muted">Écosystème</p>
       <h2 className="mt-1 text-lg font-semibold tracking-tight">
         Votre activité, connectée en un seul endroit
@@ -79,17 +47,26 @@ export function EcosystemFlow() {
       <p className="mt-2 max-w-2xl text-sm text-chic-muted">
         Une suite d’outils pour gérer, analyser, automatiser et développer votre activité e-commerce.
       </p>
-      <div className="mt-5">
+      <div className="mt-5 space-y-3">
+        <Nodes items={[{ id: "sheets", label: "Google Sheets", sub: "Source de vérité" }]} />
+        <div className="ml-4 h-6 w-px bg-gradient-to-b from-chic-emerald/50 to-chic-emerald/10" />
         <Nodes
           items={[
-            { id: "sheets", label: "Google Sheets" },
-            { id: "orders", label: "Orders" },
-            { id: "analytics", label: "Analytics" },
-            { id: "ai", label: "AI" },
-            { id: "marketing", label: "Marketing" },
-            { id: "store", label: "Store" },
+            { id: "core", label: "Chic Fragrance", sub: "Système de gestion", accent: true },
           ]}
         />
+        <div className="ml-4 h-6 w-px bg-gradient-to-b from-chic-emerald/40 to-transparent" />
+        <Nodes
+          items={[
+            { id: "orders", label: "Commandes" },
+            { id: "analytics", label: "Analytics" },
+            { id: "ads", label: "Publicité" },
+            { id: "ai", label: "AI" },
+            { id: "store", label: "Store", sub: "Bientôt" },
+          ]}
+        />
+        <div className="ml-4 h-6 w-px bg-gradient-to-b from-chic-emerald/30 to-transparent" />
+        <Nodes items={[{ id: "decisions", label: "Décisions business" }]} />
       </div>
     </section>
   );

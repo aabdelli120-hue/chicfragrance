@@ -24,3 +24,16 @@ export function comparisonValue(plan: PlanId, feature: FeatureId): "yes" | "no" 
   if (!isFeatureAvailable(feature)) return "soon";
   return "yes";
 }
+
+export type ComparisonCell =
+  | { kind: "included" }
+  | { kind: "soon" }
+  | { kind: "upgrade"; plan: PlanId };
+
+/** Matrix cell: included (✓), soon (Bientôt), or the plan that unlocks it. */
+export function comparisonCell(plan: PlanId, feature: FeatureId): ComparisonCell {
+  const required = requiredPlanFor(feature);
+  if (!hasFeature(plan, feature)) return { kind: "upgrade", plan: required };
+  if (!isFeatureAvailable(feature)) return { kind: "soon" };
+  return { kind: "included" };
+}

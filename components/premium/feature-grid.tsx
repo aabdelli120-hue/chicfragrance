@@ -17,8 +17,8 @@ const ICONS: Record<string, string> = {
 
 export function FeatureGrid() {
   return (
-    <section id="modules">
-      <p className="text-[11px] uppercase tracking-[0.16em] text-chic-muted">Modules</p>
+    <section id="couverture" className="scroll-mt-6">
+      <p className="text-[11px] uppercase tracking-[0.16em] text-chic-muted">Couverture</p>
       <h2 className="mt-1 text-lg font-semibold tracking-tight">
         Tout ce que votre activité peut connecter
       </h2>
@@ -51,7 +51,7 @@ export function FeatureGrid() {
       <div className="mt-3 text-xs text-chic-muted">
         Les modules IA et Store restent marqués bientôt disponibles.{" "}
         <Link href="#plans" className="text-chic-emerald">
-          Voir les plans
+          Voir les offres
         </Link>
       </div>
     </section>

@@ -47,7 +47,7 @@ export function ModuleFrame({
               <div className="card p-5">
                 <div className="flex items-center justify-between">
                   <p className="text-[11px] uppercase tracking-[0.14em] text-chic-muted">Statut</p>
-                  <PlanBadge plan={required === "ELITE" ? "ELITE" : "PRO"} />
+                  <PlanBadge plan={required} />
                 </div>
                 <p className="mt-3 text-sm font-medium">Bientôt disponible</p>
                 <p className="mt-1 text-sm text-chic-muted">
