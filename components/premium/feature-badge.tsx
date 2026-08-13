@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requiredPlanFor } from "@/lib/entitlements";
 import type { FeatureId } from "@/lib/features";
+import { PlanBadge } from "@/components/premium/plan-badge";
 
 export function FeatureBadge({
   feature,
@@ -11,13 +12,7 @@ export function FeatureBadge({
 }) {
   const plan = requiredPlanFor(feature);
   if (plan === "FREE" || plan === "ESSENTIAL") return null;
-  return (
-    <span
-      className={`rounded-full border border-chic-gold/50 bg-chic-gold/15 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-chic-gold ${className}`}
-    >
-      {plan === "ELITE" ? "ELITE" : "PRO"}
-    </span>
-  );
+  return <PlanBadge plan={plan} className={className} />;
 }
 
 export function PremiumLock({
@@ -30,20 +25,24 @@ export function PremiumLock({
   description: string;
 }) {
   const plan = requiredPlanFor(feature);
+  const label = plan === "ELITE" ? "Elite" : "Pro";
+
   return (
-    <div className="card mx-auto max-w-xl p-8 text-center">
-      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-chic-gold/40 bg-chic-gold/10 text-chic-gold">
-        <LockIcon />
+    <div className="card max-w-lg p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-chic-line bg-chic-cream text-chic-muted">
+          <LockIcon />
+        </div>
+        <PlanBadge plan={plan} />
       </div>
-      <p className="mt-4 text-[11px] tracking-[0.2em] text-chic-gold">PREMIUM</p>
-      <h2 className="mt-2 font-serif text-3xl">{title}</h2>
-      <p className="mt-3 text-sm text-chic-muted">{description}</p>
-      <p className="mt-2 text-sm">Disponible avec le plan {plan === "ELITE" ? "Elite" : "Pro"}.</p>
+      <h2 className="mt-4 text-lg font-semibold tracking-tight">{title}</h2>
+      <p className="mt-1 text-sm text-chic-muted">Disponible avec {label}</p>
+      <p className="mt-2 text-sm">{description}</p>
       <Link
-        href="/premium"
-        className="mt-6 inline-flex rounded-2xl bg-chic-gold px-5 py-3 text-sm font-semibold text-chic-forest-deep"
+        href="/premium#plans"
+        className="mt-4 inline-flex rounded-xl bg-chic-emerald px-4 py-2.5 text-sm font-semibold text-white"
       >
-        Découvrir {plan === "ELITE" ? "Elite" : "Pro"}
+        Voir le plan {label}
       </Link>
     </div>
   );
@@ -51,7 +50,7 @@ export function PremiumLock({
 
 function LockIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
       <rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.7" />
       <path d="M8 11V8a4 4 0 0 1 8 0v3" stroke="currentColor" strokeWidth="1.7" />
     </svg>

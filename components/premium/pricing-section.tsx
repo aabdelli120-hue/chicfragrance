@@ -1,112 +1,93 @@
 "use client";
 
-import { FEATURES } from "@/lib/features";
-import { PLANS, type PlanId } from "@/lib/plans";
-import { comparisonValue } from "@/lib/entitlements";
+import { useToast } from "@/components/toast-provider";
 import { formatDzd } from "@/lib/format";
+import { PLANS } from "@/lib/plans";
 
 export function PricingSection() {
+  const { notify } = useToast();
+
   return (
-    <div>
-      <div className="grid gap-5 lg:grid-cols-3">
+    <section id="plans">
+      <p className="text-[11px] uppercase tracking-[0.16em] text-chic-muted">Plans</p>
+      <h2 className="mt-1 text-lg font-semibold tracking-tight">Choisissez le niveau d’outils</h2>
+      <p className="mt-1 text-sm text-chic-muted">
+        Paiement bientôt disponible. Aucun abonnement n’est facturé pour le moment.
+      </p>
+      <div className="mt-4 grid gap-3 lg:grid-cols-3">
         {PLANS.map((plan) => (
           <article
             key={plan.id}
-            className={`relative overflow-hidden rounded-[28px] border bg-white p-6 text-foreground transition hover:-translate-y-1 ${
+            className={`card relative p-5 transition duration-300 ${
               plan.recommended
-                ? "border-chic-gold shadow-[0_20px_60px_rgba(201,162,39,0.18)]"
-                : "border-white/20"
+                ? "border-chic-emerald/40 ring-1 ring-chic-emerald/15 lg:-translate-y-1"
+                : ""
             }`}
           >
             {plan.badge ? (
-              <p className="absolute right-4 top-4 rounded-full bg-chic-gold px-3 py-1 text-[10px] font-semibold tracking-wide text-chic-forest-deep">
+              <p
+                className={`absolute right-4 top-4 rounded-full px-2.5 py-0.5 text-[10px] font-semibold tracking-[0.12em] uppercase ${
+                  plan.recommended
+                    ? "bg-chic-emerald text-white"
+                    : "border border-chic-gold/40 bg-chic-gold/10 text-chic-gold"
+                }`}
+              >
                 {plan.badge}
               </p>
             ) : null}
-            <p className="text-xs uppercase tracking-[0.18em] text-chic-gold">{plan.name}</p>
-            <p className="mt-4 font-serif text-4xl text-chic-forest">
-              {formatDzd(plan.price)}
-              <span className="ml-1 text-sm font-sans text-chic-muted">/ mois</span>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-chic-muted">
+              {plan.name}
             </p>
-            <p className="mt-3 text-sm text-chic-muted">{plan.description}</p>
-            <ul className="mt-5 space-y-2 text-sm">
+            <p className="mt-3 text-3xl font-semibold tabular-nums tracking-tight">
+              {formatDzd(plan.price)}
+              <span className="ml-1 text-sm font-normal text-chic-muted">/ mois</span>
+            </p>
+            <p className="mt-2 text-sm text-chic-muted">{plan.description}</p>
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              {plan.capabilities.map((item) => (
+                <div key={item.label} className="rounded-lg bg-chic-cream/80 px-2 py-2">
+                  <p className="text-[10px] uppercase tracking-wide text-chic-muted">{item.label}</p>
+                  <p className="text-xs font-medium">{item.value}</p>
+                </div>
+              ))}
+            </div>
+            <ul className="mt-4 space-y-1.5 text-sm">
               {plan.features.map((feature) => (
-                <li key={feature}>✓ {feature}</li>
+                <li key={feature} className="flex gap-2">
+                  <span className="text-chic-emerald">✓</span>
+                  <span>{feature}</span>
+                </li>
               ))}
               {plan.comingSoon?.map((feature) => (
-                <li key={feature} className="text-chic-muted">
-                  {feature}{" "}
+                <li key={feature} className="flex items-center gap-2 text-chic-muted">
+                  <span>—</span>
+                  <span>{feature}</span>
                   <span className="rounded-full bg-chic-cream px-2 py-0.5 text-[10px] uppercase tracking-wide">
                     Bientôt
                   </span>
                 </li>
               ))}
             </ul>
+            {plan.id === "ELITE" ? (
+              <div className="mt-3 rounded-lg border border-dashed border-chic-line px-3 py-2 text-xs text-chic-muted">
+                Store Builder · Bientôt disponible
+              </div>
+            ) : null}
             <button
               type="button"
-              className={`mt-6 w-full rounded-2xl px-4 py-3 text-sm font-semibold ${
+              onClick={() => notify("success", "Le paiement sera bientôt disponible.")}
+              className={`mt-5 w-full rounded-xl px-4 py-2.5 text-sm font-semibold transition duration-300 ${
                 plan.recommended
-                  ? "bg-chic-gold text-chic-forest-deep"
-                  : "bg-chic-forest text-white"
+                  ? "bg-chic-emerald text-white hover:bg-chic-forest"
+                  : "bg-chic-forest text-white hover:bg-chic-forest-deep"
               }`}
             >
-              Bientôt disponible
+              {plan.cta}
             </button>
+            <p className="mt-2 text-center text-[11px] text-chic-muted">Bientôt disponible</p>
           </article>
         ))}
       </div>
-
-      <section className="mt-12">
-        <h2 className="font-serif text-3xl text-white">Comparez les fonctionnalités</h2>
-        <div className="mt-6 hidden overflow-hidden rounded-[24px] bg-white md:block">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-chic-line text-xs uppercase tracking-wide text-chic-muted">
-                <th className="px-5 py-4 font-medium">Fonctionnalité</th>
-                {PLANS.map((plan) => (
-                  <th key={plan.id} className="px-5 py-4 font-medium">
-                    {plan.name}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {FEATURES.map((feature) => (
-                <tr key={feature.id} className="border-b border-chic-line/70">
-                  <td className="px-5 py-3">{feature.label}</td>
-                  {PLANS.map((plan) => (
-                    <td key={plan.id} className="px-5 py-3">
-                      {mark(comparisonValue(plan.id, feature.id))}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="mt-6 space-y-3 md:hidden">
-          {FEATURES.map((feature) => (
-            <details key={feature.id} className="rounded-2xl bg-white p-4">
-              <summary className="cursor-pointer font-medium">{feature.label}</summary>
-              <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
-                {PLANS.map((plan) => (
-                  <div key={plan.id}>
-                    <p className="text-chic-muted">{plan.name}</p>
-                    <p className="mt-1">{mark(comparisonValue(plan.id as PlanId, feature.id))}</p>
-                  </div>
-                ))}
-              </div>
-            </details>
-          ))}
-        </div>
-      </section>
-    </div>
+    </section>
   );
-}
-
-function mark(value: "yes" | "no" | "soon") {
-  if (value === "yes") return "✓";
-  if (value === "soon") return "Bientôt";
-  return "—";
 }

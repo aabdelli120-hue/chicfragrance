@@ -1,53 +1,45 @@
-import { AppShell } from "@/components/app-shell";
-import { FeatureBadge } from "@/components/premium/feature-badge";
-import { PremiumGate } from "@/components/premium/premium-gate";
+import { ModuleFrame } from "@/components/premium/module-frame";
+import { Workflow } from "@/components/premium/system-flow";
 
 export default function LandingStudioPage() {
   return (
-    <AppShell orderCount={0}>
-      <main className="px-4 py-6 lg:px-8">
-        <div className="mb-5 flex items-center gap-3">
-          <h1 className="font-serif text-4xl">Landing Pages IA</h1>
-          <FeatureBadge feature="AI_LANDING_PAGE" />
+    <ModuleFrame
+      feature="AI_LANDING_PAGE"
+      title="Landing Pages IA"
+      description="Transformez un produit en page de vente en quelques secondes."
+    >
+      <div className="card p-5">
+        <p className="text-[11px] uppercase tracking-[0.14em] text-chic-muted">Workflow</p>
+        <div className="mt-3">
+          <Workflow steps={["Produit", "Audience", "Angle marketing", "Landing Page", "Conversion"]} />
         </div>
-        <PremiumGate
-          feature="AI_LANDING_PAGE"
-          title="Création de Landing Page IA"
-          description="Générez une page d'offre à partir du produit, du prix et de l'angle marketing."
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <Field label="Produit" value="Good Girl EDP" />
+          <Field label="Objectif" value="Conversion" />
+          <Field label="Angle" value="Offre" />
+          <Field label="CTA" value="Générer" />
+        </div>
+        <button
+          type="button"
+          disabled
+          className="mt-4 rounded-xl bg-chic-forest px-4 py-2.5 text-sm font-semibold text-white opacity-55"
         >
-          <LandingForm />
-        </PremiumGate>
-      </main>
-    </AppShell>
+          Générer avec IA
+        </button>
+      </div>
+    </ModuleFrame>
   );
 }
 
-function LandingForm() {
+function Field({ label, value }: { label: string; value: string }) {
   return (
-    <form className="card grid gap-4 p-6 md:grid-cols-2">
-      <label className="text-sm">
-        Nom du produit
-        <input className="mt-1 w-full rounded-xl border border-chic-line px-3 py-2" />
-      </label>
-      <label className="text-sm">
-        Prix
-        <input className="mt-1 w-full rounded-xl border border-chic-line px-3 py-2" />
-      </label>
-      <label className="text-sm md:col-span-2">
-        Description
-        <textarea className="mt-1 w-full rounded-xl border border-chic-line px-3 py-2" rows={4} />
-      </label>
-      <label className="text-sm">
-        Audience
-        <input className="mt-1 w-full rounded-xl border border-chic-line px-3 py-2" />
-      </label>
-      <label className="text-sm">
-        Angle marketing
-        <input className="mt-1 w-full rounded-xl border border-chic-line px-3 py-2" />
-      </label>
-      <button type="button" disabled className="rounded-2xl bg-chic-forest px-4 py-3 text-sm text-white opacity-60 md:col-span-2">
-        Générer · Bientôt disponible avec Pro
-      </button>
-    </form>
+    <label className="block text-sm">
+      <span className="text-[10px] uppercase tracking-wide text-chic-muted">{label}</span>
+      <input
+        defaultValue={value}
+        readOnly
+        className="mt-1 w-full rounded-lg border border-chic-line px-3 py-2 text-sm"
+      />
+    </label>
   );
 }

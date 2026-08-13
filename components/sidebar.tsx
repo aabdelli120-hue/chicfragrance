@@ -5,7 +5,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { FeatureBadge } from "@/components/premium/feature-badge";
+import { PlanBadge } from "@/components/premium/plan-badge";
 import type { FeatureId } from "@/lib/features";
+import { useCurrentPlan } from "@/lib/use-current-plan";
 
 type NavItem = {
   href: string;
@@ -29,9 +31,12 @@ const GROWTH: NavItem[] = [
 ];
 
 const PREMIUM: NavItem[] = [
+  { href: "/premium", label: "Premium", icon: CrownIcon },
   { href: "/creation-ia/visuels", label: "AI Studio", icon: StudioIcon, feature: "AI_PRODUCT_IMAGES" },
   { href: "/creation-ia/landing", label: "Landing Pages", icon: PageIcon, feature: "AI_LANDING_PAGE" },
   { href: "/creation-ia/creatifs", label: "Créatifs", icon: AdsIcon, feature: "AI_AD_CREATIVES" },
+  { href: "/automatisations", label: "Automatisations", icon: BoltIcon, feature: "AUTOMATIONS" },
+  { href: "/intelligence", label: "Intelligence", icon: InsightIcon, feature: "AI_INSIGHTS" },
   { href: "/boutique", label: "Boutique", icon: StoreIcon, feature: "AI_STORE_BUILDER" },
 ];
 
@@ -45,6 +50,7 @@ export function Sidebar({
   onClose: () => void;
 }) {
   const pathname = usePathname();
+  const { plan } = useCurrentPlan();
 
   return (
     <>
@@ -73,7 +79,14 @@ export function Sidebar({
         <nav className="mt-6 flex-1 space-y-5 overflow-y-auto px-3 pb-4">
           <NavGroup title="Activité" items={ACTIVITY} pathname={pathname} orderCount={orderCount} onClose={onClose} />
           <NavGroup title="Croissance" items={GROWTH} pathname={pathname} orderCount={orderCount} onClose={onClose} />
-          <NavGroup title="Premium" items={PREMIUM} pathname={pathname} orderCount={orderCount} onClose={onClose} />
+          <NavGroup
+            title="Premium"
+            items={PREMIUM}
+            pathname={pathname}
+            orderCount={orderCount}
+            onClose={onClose}
+            planBadge={plan === "PRO" || plan === "ELITE" ? plan : undefined}
+          />
           <div>
             <p className="px-3 pb-2 text-[10px] tracking-[0.18em] text-white/35">SYSTÈME</p>
             <Link
@@ -90,17 +103,15 @@ export function Sidebar({
         </nav>
 
         <div className="px-3 pb-5">
-          <div className="rounded-2xl border border-chic-gold/40 bg-white/5 p-4">
-            <p className="text-[11px] tracking-[0.18em] text-chic-gold">CHIC FRAGRANCE PREMIUM</p>
-            <p className="mt-2 text-sm text-white/80">
-              Développez votre activité avec des outils intelligents.
-            </p>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <p className="text-[11px] tracking-[0.16em] text-chic-gold">Chic Fragrance Premium</p>
+            <p className="mt-2 text-sm text-white/75">Débloquez plus d’outils</p>
             <Link
               href="/premium"
               onClick={onClose}
-              className="mt-4 block rounded-xl bg-gradient-to-r from-[#e6c56a] to-[#c9a227] px-3 py-2 text-center text-sm font-semibold text-chic-forest-deep"
+              className="mt-4 block rounded-xl bg-chic-emerald px-3 py-2 text-center text-sm font-semibold text-white"
             >
-              Découvrir Premium
+              Voir les plans
             </Link>
           </div>
           <div className="mt-4 flex items-center gap-3 px-1">
@@ -124,12 +135,14 @@ function NavGroup({
   pathname,
   orderCount,
   onClose,
+  planBadge,
 }: {
   title: string;
   items: NavItem[];
   pathname: string;
   orderCount: number;
   onClose: () => void;
+  planBadge?: "PRO" | "ELITE";
 }) {
   return (
     <div>
@@ -152,9 +165,11 @@ function NavGroup({
                 {item.label}
               </span>
               {item.badgeKey === "orders" && orderCount > 0 ? (
-                <span className="rounded-full bg-chic-gold px-2 py-0.5 text-[11px] font-semibold text-chic-forest-deep">
+                <span className="rounded-full bg-chic-emerald px-2 py-0.5 text-[11px] font-semibold text-white">
                   {orderCount}
                 </span>
+              ) : item.href === "/premium" ? (
+                <PlanBadge plan={planBadge ?? "PRO"} />
               ) : item.feature ? (
                 <FeatureBadge feature={item.feature} />
               ) : null}
@@ -226,6 +241,13 @@ function SparkIcon() {
     </svg>
   );
 }
+function CrownIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <path d="M4 16 7 8l5 4 5-4 3 8H4Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+    </svg>
+  );
+}
 function StudioIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -252,6 +274,20 @@ function StoreIcon() {
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
       <path d="M4 9h16l-1 11H5L4 9Z" stroke="currentColor" strokeWidth="1.7" />
       <path d="M8 9V7a4 4 0 0 1 8 0v2" stroke="currentColor" strokeWidth="1.7" />
+    </svg>
+  );
+}
+function BoltIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <path d="M13 3 6 14h6l-1 7 7-11h-6l1-7Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+    </svg>
+  );
+}
+function InsightIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <path d="M4 19V9l6 4 5-7 5 5v8H4Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
     </svg>
   );
 }

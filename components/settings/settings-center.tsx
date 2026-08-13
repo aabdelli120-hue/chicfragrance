@@ -242,8 +242,8 @@ export function SettingsCenter() {
                 </li>
               ))}
             </ul>
-            <Link href="/premium" className="mt-6 inline-flex rounded-2xl bg-chic-gold px-4 py-2 text-sm font-semibold text-chic-forest-deep">
-              Passer à Premium
+            <Link href="/premium" className="mt-6 inline-flex rounded-xl bg-chic-emerald px-4 py-2 text-sm font-semibold text-white">
+              Voir les plans
             </Link>
           </section>
         ) : null}
