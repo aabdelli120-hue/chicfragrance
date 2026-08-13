@@ -1,36 +1,39 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Chic Fragrance — Pilotage
 
-## Getting Started
+Interface ERP connectée à Google Sheets. La feuille reste la source de vérité. Le site ne crée pas de base de commandes séparée.
 
-First, run the development server:
+## Démarrage
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Ouvrez [http://localhost:3000](http://localhost:3000) (ou le port indiqué dans le terminal).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Connexion Google Sheets
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Créez un fichier `.env.local` à partir de `.env.example` :
 
-## Learn More
+```
+GOOGLE_SERVICE_ACCOUNT_EMAIL=
+GOOGLE_PRIVATE_KEY=
+GOOGLE_SHEET_ID=
+CHIC_ALLOW_DEMO_DATA=false
+```
 
-To learn more about Next.js, take a look at the following resources:
+1. Créez un projet Google Cloud et activez **Google Sheets API**.
+2. Créez un **compte de service** et téléchargez la clé JSON.
+3. Copiez `client_email` → `GOOGLE_SERVICE_ACCOUNT_EMAIL`.
+4. Copiez `private_key` → `GOOGLE_PRIVATE_KEY` (gardez les `\n`, ou collez la clé complète entre guillemets).
+5. Copiez l’ID de la feuille (dans l’URL `https://docs.google.com/spreadsheets/d/<ID>/edit`) → `GOOGLE_SHEET_ID`.
+6. Partagez la feuille avec l’email du compte de service, droit **Éditeur**.
+7. Redémarrez `npm run dev`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Sans ces variables, le site peut afficher un mode démonstration clairement libellé si `CHIC_ALLOW_DEMO_DATA=true`. Ce mode n’écrit jamais dans Google Sheets.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## API
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `GET /api/orders` — lecture COMMANDES
+- `GET /api/expenses` — lecture DEPENSES
+- `PATCH /api/orders/[orderNumber]` — met à jour le Statut de la ligne identifiée par **N° Commande**

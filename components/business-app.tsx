@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { ConnectionBanner } from "@/components/connection-banner";
 import { KpiCards } from "@/components/kpi-cards";
@@ -49,42 +49,45 @@ function InnerApp({
   const [rangeDays, setRangeDays] = useState(7);
   const range = useMemo(() => lastNDaysRange(rangeDays), [rangeDays]);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const [ordersRes, expensesRes] = await Promise.all([
-        fetch("/api/orders", { cache: "no-store" }),
-        fetch("/api/expenses", { cache: "no-store" }),
-      ]);
-
-      const ordersJson = await ordersRes.json();
-      const expensesJson = await expensesRes.json();
-
-      setSource(ordersJson.source ?? "unconfigured");
-      setMessage(ordersJson.message ?? ordersJson.error ?? "");
-      setMissing(ordersJson.missing ?? []);
-      setOrders(ordersJson.orders ?? []);
-      setExpenses(expensesJson.expenses ?? []);
-
-      if (!ordersRes.ok && ordersJson.source !== "unconfigured") {
-        setError(ordersJson.error ?? "Impossible de lire les commandes.");
-      }
-    } catch (loadError) {
-      setError(
-        loadError instanceof Error
-          ? loadError.message
-          : "Impossible de joindre l'API locale.",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
+    const controller = new AbortController();
+
+    async function load() {
+      try {
+        const [ordersRes, expensesRes] = await Promise.all([
+          fetch("/api/orders", { cache: "no-store", signal: controller.signal }),
+          fetch("/api/expenses", { cache: "no-store", signal: controller.signal }),
+        ]);
+
+        const ordersJson = await ordersRes.json();
+        const expensesJson = await expensesRes.json();
+
+        setSource(ordersJson.source ?? "unconfigured");
+        setMessage(ordersJson.message ?? ordersJson.error ?? "");
+        setMissing(ordersJson.missing ?? []);
+        setOrders(ordersJson.orders ?? []);
+        setExpenses(expensesJson.expenses ?? []);
+
+        if (!ordersRes.ok && ordersJson.source !== "unconfigured") {
+          setError(ordersJson.error ?? "Impossible de lire les commandes.");
+        }
+      } catch (loadError) {
+        if (controller.signal.aborted) return;
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : "Impossible de joindre l'API locale.",
+        );
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    }
+
     void load();
-  }, [load]);
+    return () => controller.abort();
+  }, []);
 
   return (
     <AppShell orderCount={orders.length}>
