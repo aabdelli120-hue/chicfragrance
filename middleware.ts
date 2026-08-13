@@ -10,8 +10,12 @@ const PUBLIC_PATHS = [
   "/forgot-password",
   "/reset-password",
   "/invite",
-  "/p", // public published landing pages (future)
+  "/p",
 ];
+
+function isAuthEnabled() {
+  return process.env.CHIC_AUTH_ENABLED === "true";
+}
 
 function getSecret() {
   const raw =
@@ -52,7 +56,6 @@ async function readRole(request: NextRequest): Promise<{
   }
 }
 
-/** Legacy client routes → /app equivalents. */
 const LEGACY_REDIRECTS: Record<string, string> = {
   "/": "/app",
   "/commandes": "/app/commandes",
@@ -72,14 +75,46 @@ const LEGACY_REDIRECTS: Record<string, string> = {
   "/boutique": "/app/boutique",
 };
 
+/** Private-mode: map /app/* back to classic dashboard routes. */
+const APP_TO_LEGACY: Record<string, string> = {
+  "/app": "/",
+  "/app/commandes": "/commandes",
+  "/app/depenses": "/depenses",
+  "/app/rapports": "/rapports",
+  "/app/produits": "/produits",
+  "/app/clients": "/clients",
+  "/app/parametres": "/parametres",
+  "/app/premium": "/premium",
+};
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // API auth is enforced in route handlers (need full session + permissions).
   if (pathname.startsWith("/api/")) {
     return NextResponse.next();
   }
 
+  // ─── Private Chic Fragrance dashboard (auth paused) ───
+  if (!isAuthEnabled()) {
+    if (
+      pathname === "/login" ||
+      pathname === "/signup" ||
+      pathname.startsWith("/forgot-password") ||
+      pathname.startsWith("/reset-password") ||
+      pathname.startsWith("/invite") ||
+      pathname.startsWith("/admin")
+    ) {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+
+    if (APP_TO_LEGACY[pathname]) {
+      return NextResponse.redirect(new URL(APP_TO_LEGACY[pathname], request.url));
+    }
+
+    return NextResponse.next();
+  }
+
+  // ─── Auth-enabled multi-tenant mode (future) ───
   const { role, authenticated } = await readRole(request);
 
   if (isPublic(pathname)) {
@@ -96,7 +131,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(login);
   }
 
-  // Role-based area protection
   if (pathname.startsWith("/admin") && role !== "PLATFORM_ADMIN") {
     return NextResponse.redirect(new URL("/app", request.url));
   }
@@ -105,12 +139,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/admin", request.url));
   }
 
-  // Legacy redirects for authenticated client users
   if (role !== "PLATFORM_ADMIN" && LEGACY_REDIRECTS[pathname]) {
     return NextResponse.redirect(new URL(LEGACY_REDIRECTS[pathname], request.url));
   }
-
-  // Prefix match for nested legacy creation-ia paths already covered above.
 
   return NextResponse.next();
 }

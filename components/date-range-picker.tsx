@@ -16,7 +16,7 @@ export function DateRangePicker({
   custom,
   onPresetChange,
   onCustomChange,
-  tone = "dark",
+  tone = "light",
 }: {
   preset: RangePreset;
   range: DateRange;
@@ -48,28 +48,34 @@ export function DateRangePicker({
   const dark = tone === "dark";
 
   return (
-    <div ref={rootRef} className="relative">
+    <div ref={rootRef} className="relative w-full sm:w-auto">
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
         aria-label={fullLabel}
-        className={`inline-flex max-w-full items-center gap-2 rounded-full px-3 py-2 text-xs font-medium transition ${
+        className={`inline-flex w-full max-w-full items-center gap-2 rounded-2xl px-3.5 py-2.5 text-xs font-semibold transition sm:w-auto ${
           dark
-            ? "bg-white/12 text-white hover:bg-white/18"
-            : "border border-chic-line bg-white text-chic-forest shadow-sm hover:border-chic-emerald/40"
+            ? "border border-white/15 bg-white/10 text-white hover:bg-white/15"
+            : "border border-chic-line bg-white text-chic-forest-deep shadow-sm hover:border-chic-emerald/35"
         }`}
       >
         <CalendarIcon />
-        <span className="truncate">{presetShortLabel(preset)}</span>
-        <span className={`hidden truncate lg:inline ${dark ? "text-white/55" : "text-chic-muted"}`}>
-          · {formatRangeLabel(range.from, range.to)}
+        <span className="min-w-0 flex-1 text-left">
+          <span className="block truncate">{presetShortLabel(preset)}</span>
+          <span
+            className={`mt-0.5 block truncate text-[11px] font-medium ${
+              dark ? "text-white/55" : "text-chic-muted"
+            }`}
+          >
+            {formatRangeLabel(range.from, range.to)}
+          </span>
         </span>
       </button>
 
       {open ? (
-        <div className="absolute right-0 z-30 mt-2 w-[min(92vw,360px)] rounded-2xl border border-chic-line bg-white p-4 text-foreground shadow-xl">
-          <p className="mb-3 text-[11px] uppercase tracking-[0.16em] text-chic-muted">
+        <div className="absolute right-0 z-30 mt-2 w-[min(94vw,380px)] rounded-2xl border border-chic-line bg-white p-4 text-foreground shadow-xl">
+          <p className="mb-3 text-[11px] font-semibold tracking-[0.16em] text-chic-muted uppercase">
             Période
           </p>
           <div className="grid grid-cols-2 gap-2">
@@ -81,10 +87,10 @@ export function DateRangePicker({
                   onPresetChange(item.id);
                   if (item.id !== "custom") setOpen(false);
                 }}
-                className={`rounded-xl px-3 py-2 text-left text-sm transition ${
+                className={`rounded-xl px-3 py-2.5 text-left text-sm font-medium transition ${
                   preset === item.id
-                    ? "bg-chic-forest text-white"
-                    : "bg-chic-cream/80 hover:bg-chic-cream"
+                    ? "bg-chic-forest-deep text-white"
+                    : "bg-chic-mint/50 hover:bg-chic-mint"
                 }`}
               >
                 {item.label}
@@ -93,31 +99,40 @@ export function DateRangePicker({
           </div>
 
           {preset === "custom" ? (
-            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <label className="text-xs text-chic-muted">
-                Date début
-                <input
-                  type="date"
-                  value={custom.from}
-                  onChange={(event) => {
-                    onPresetChange("custom");
-                    onCustomChange({ ...custom, from: event.target.value });
-                  }}
-                  className="mt-1 w-full rounded-xl border border-chic-line px-3 py-2 text-sm text-foreground"
-                />
-              </label>
-              <label className="text-xs text-chic-muted">
-                Date fin
-                <input
-                  type="date"
-                  value={custom.to}
-                  onChange={(event) => {
-                    onPresetChange("custom");
-                    onCustomChange({ ...custom, to: event.target.value });
-                  }}
-                  className="mt-1 w-full rounded-xl border border-chic-line px-3 py-2 text-sm text-foreground"
-                />
-              </label>
+            <div className="mt-4 space-y-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <label className="text-xs font-medium text-chic-muted">
+                  Date début
+                  <input
+                    type="date"
+                    value={custom.from}
+                    onChange={(event) => {
+                      onPresetChange("custom");
+                      onCustomChange({ ...custom, from: event.target.value });
+                    }}
+                    className="mt-1 w-full rounded-xl border border-chic-line px-3 py-2 text-sm text-foreground"
+                  />
+                </label>
+                <label className="text-xs font-medium text-chic-muted">
+                  Date fin
+                  <input
+                    type="date"
+                    value={custom.to}
+                    onChange={(event) => {
+                      onPresetChange("custom");
+                      onCustomChange({ ...custom, to: event.target.value });
+                    }}
+                    className="mt-1 w-full rounded-xl border border-chic-line px-3 py-2 text-sm text-foreground"
+                  />
+                </label>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="w-full rounded-xl bg-chic-forest-deep px-3 py-2.5 text-sm font-semibold text-white"
+              >
+                Appliquer
+              </button>
             </div>
           ) : null}
         </div>
@@ -128,7 +143,7 @@ export function DateRangePicker({
 
 function CalendarIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <rect x="4" y="5" width="16" height="15" rx="2.5" stroke="currentColor" strokeWidth="1.7" />
       <path d="M8 3v4M16 3v4M4 10h16" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
     </svg>

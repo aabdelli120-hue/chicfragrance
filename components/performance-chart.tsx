@@ -58,7 +58,7 @@ export function PerformanceChart({ metrics }: { metrics: DashboardMetrics }) {
     <article className="card p-5">
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="font-serif text-xl">Évolution des performances</h2>
+          <h2 className="text-lg font-semibold text-chic-forest-deep">Évolution des performances</h2>
           <p className="text-xs text-chic-muted">Encaissés, dépenses ads et net après publicité</p>
         </div>
         <div className="flex flex-wrap gap-3 text-[11px] text-chic-muted">

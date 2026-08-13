@@ -8,6 +8,7 @@ import {
   verifySessionToken,
 } from "@/lib/platform/crypto";
 import { permissionsForRole, type Permission } from "@/lib/platform/permissions";
+import { isAuthEnabled } from "@/lib/platform/private-mode";
 import { ensurePlatformSeeded } from "@/lib/platform/seed";
 import { readDatabase } from "@/lib/platform/store";
 import type {
@@ -71,6 +72,36 @@ export async function buildAuthSession(
   };
 }
 
+/** Private dashboard: Sofiane / Chic Fragrance owner without login. */
+export async function getPrivateDashboardSession(): Promise<AuthSession> {
+  const db = await ensurePlatformSeeded();
+  const org =
+    db.organizations.find((item) => item.slug === "chic-fragrance") ??
+    db.organizations[0];
+  const owner =
+    db.users.find(
+      (user) => user.organizationId === org?.id && user.role === "OWNER",
+    ) ?? db.users.find((user) => user.role === "OWNER");
+
+  if (!owner) {
+    throw new AuthError(
+      "SEED_MISSING",
+      "Espace Chic Fragrance introuvable. Relancez le serveur.",
+      500,
+    );
+  }
+
+  const session = await buildAuthSession(owner);
+  if (!session?.organization) {
+    throw new AuthError(
+      "SEED_MISSING",
+      "Organisation Chic Fragrance indisponible.",
+      500,
+    );
+  }
+  return session;
+}
+
 export async function createSessionForUser(user: PlatformUser): Promise<string> {
   return signSessionToken({
     sub: user.id,
@@ -91,6 +122,10 @@ export async function clearSessionCookie(): Promise<void> {
 }
 
 export async function getSessionFromCookies(): Promise<AuthSession | null> {
+  if (!isAuthEnabled()) {
+    return getPrivateDashboardSession();
+  }
+
   await ensurePlatformSeeded();
   const jar = await cookies();
   const token = jar.get(getSessionCookieName())?.value;
@@ -107,6 +142,9 @@ export async function getSessionFromCookies(): Promise<AuthSession | null> {
 }
 
 export async function requireSession(): Promise<AuthSession> {
+  if (!isAuthEnabled()) {
+    return getPrivateDashboardSession();
+  }
   const session = await getSessionFromCookies();
   if (!session) {
     throw new AuthError("UNAUTHENTICATED", "Authentification requise.", 401);
@@ -118,6 +156,7 @@ export async function requireRole(
   roles: PlatformRole[],
 ): Promise<AuthSession> {
   const session = await requireSession();
+  if (!isAuthEnabled()) return session;
   if (!roles.includes(session.user.role)) {
     throw new AuthError("FORBIDDEN", "Accès refusé.", 403);
   }
@@ -128,6 +167,7 @@ export async function requirePermission(
   permission: Permission | Permission[],
 ): Promise<AuthSession> {
   const session = await requireSession();
+  if (!isAuthEnabled()) return session;
   const needed = Array.isArray(permission) ? permission : [permission];
   const ok = needed.every((p) => session.permissions.includes(p));
   if (!ok) {
@@ -141,15 +181,18 @@ export async function requireOrganizationContext(): Promise<
   AuthSession & { organizationId: string }
 > {
   const session = await requireSession();
+  if (!session.organization?.id) {
+    throw new AuthError("FORBIDDEN", "Aucune organisation associée.", 403);
+  }
+  if (!isAuthEnabled()) {
+    return { ...session, organizationId: session.organization.id };
+  }
   if (session.user.role === "PLATFORM_ADMIN") {
     throw new AuthError(
       "FORBIDDEN",
       "Utilisez le panneau admin pour gérer les organisations.",
       403,
     );
-  }
-  if (!session.organization?.id) {
-    throw new AuthError("FORBIDDEN", "Aucune organisation associée.", 403);
   }
   return { ...session, organizationId: session.organization.id };
 }

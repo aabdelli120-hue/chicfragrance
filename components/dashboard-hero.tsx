@@ -2,95 +2,48 @@
 
 import { AnimatedNumber } from "@/components/animated-number";
 import { formatDzd, formatInt, formatPercent } from "@/lib/format";
-import type { DashboardComparison, DashboardMetrics } from "@/lib/metrics";
+import type { DashboardMetrics } from "@/lib/metrics";
 
 function share(part: number, total: number) {
   return total ? (part / total) * 100 : null;
 }
 
-export function HeroStrip({
+/** Emerald delivery performance hero — primary dashboard block. */
+export function DeliveryStage({
   metrics,
-  deltas,
+  dateControl,
 }: {
   metrics: DashboardMetrics;
-  deltas?: DashboardComparison;
+  dateControl?: React.ReactNode;
 }) {
-  const items = [
-    {
-      label: "Chiffre d'affaires",
-      value: metrics.collected,
-      format: formatDzd,
-      hint: deltas?.revenue.change ?? null,
-      spark: true,
-    },
-    {
-      label: "Commandes",
-      value: metrics.orderCount,
-      format: formatInt,
-      hint: "100% du total",
-    },
-    {
-      label: "Livrées",
-      value: metrics.deliveredCount,
-      format: formatInt,
-      hint: formatPercent(share(metrics.deliveredCount, metrics.orderCount)),
-    },
-    {
-      label: "En livraison",
-      value: metrics.inDeliveryCount,
-      format: formatInt,
-      hint: formatPercent(share(metrics.inDeliveryCount, metrics.orderCount)),
-    },
-    {
-      label: "Retours",
-      value: metrics.returnCount,
-      format: formatInt,
-      hint: formatPercent(share(metrics.returnCount, metrics.orderCount)),
-    },
-  ];
-
   return (
-    <div className="mt-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-      {items.map((item, index) => (
-        <article
-          key={item.label}
-          className="glass-kpi animate-fade-up relative overflow-hidden rounded-2xl p-4"
-          style={{ animationDelay: `${index * 70}ms` }}
-        >
-          <p className="text-[10px] uppercase tracking-[0.16em] text-white/55">{item.label}</p>
-          <p className="mt-2 font-serif text-2xl text-white lg:text-[28px]">
-            <AnimatedNumber value={item.value} format={item.format} />
-          </p>
-          <p className="mt-2 text-[11px] text-white/65">
-            {typeof item.hint === "number" ? (
-              <span className={item.hint >= 0 ? "text-emerald-200" : "text-red-200"}>
-                {item.hint >= 0 ? "+" : ""}
-                {item.hint.toFixed(1)}% vs période préc.
-              </span>
-            ) : (
-              item.hint
-            )}
-          </p>
-          {item.spark ? <Sparkline series={metrics.dailySeries.map((point) => point.collected)} /> : null}
-        </article>
-      ))}
-    </div>
-  );
-}
-
-export function DeliveryStage({ metrics }: { metrics: DashboardMetrics }) {
-  return (
-    <article className="card relative overflow-hidden p-5 lg:p-7">
-      <div className="pointer-events-none absolute -right-10 -top-16 h-44 w-44 rounded-full bg-chic-emerald/8" />
-      <p className="text-[11px] uppercase tracking-[0.18em] text-chic-muted">Performance livraison</p>
-      <div className="mt-5 grid items-center gap-6 lg:grid-cols-[1.1fr_auto_0.9fr]">
+    <article className="delivery-hero relative overflow-hidden rounded-[24px] p-5 text-white lg:p-7">
+      <div className="pointer-events-none absolute -left-16 bottom-0 h-40 w-40 rounded-full bg-chic-gold/10 blur-2xl" />
+      <div className="relative z-10 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-[0.16em] text-chic-muted">Livrées</p>
-          <p className="mt-2 font-serif text-6xl leading-none text-chic-forest lg:text-7xl">
+          <p className="text-[11px] font-semibold tracking-[0.18em] text-white/55 uppercase">
+            Performance livraison
+          </p>
+          <p className="mt-1 text-sm text-white/70">
+            Période sélectionnée · synchronisée avec Google Sheets
+          </p>
+        </div>
+        {dateControl}
+      </div>
+
+      <div className="relative z-10 mt-6 grid items-center gap-6 lg:grid-cols-[1.05fr_auto_0.95fr]">
+        <div>
+          <p className="text-xs font-medium tracking-[0.16em] text-white/55 uppercase">
+            Livré
+          </p>
+          <p className="mt-2 text-6xl font-bold leading-none tabular lg:text-7xl">
             <AnimatedNumber value={metrics.deliveredCount} format={formatInt} />
           </p>
-          <p className="mt-3 text-sm text-chic-muted">
-            Commandes livrées uniquement · encaissés {formatDzd(metrics.collected)}
+          <p className="mt-3 text-sm text-white/70">
+            Commandes livrées · encaissés{" "}
+            <span className="font-semibold tabular text-white">
+              {formatDzd(metrics.collected)}
+            </span>
           </p>
         </div>
 
@@ -102,11 +55,16 @@ export function DeliveryStage({ metrics }: { metrics: DashboardMetrics }) {
 
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-1">
           <MiniStat
-            label="En livraison"
+            label="En Livraison"
             value={metrics.inDeliveryCount}
-            tone="gold"
+            percent={share(metrics.inDeliveryCount, metrics.orderCount)}
           />
-          <MiniStat label="Retours" value={metrics.returnCount} tone="rose" />
+          <MiniStat
+            label="Retour"
+            value={metrics.returnCount}
+            percent={share(metrics.returnCount, metrics.orderCount)}
+            tone="rose"
+          />
         </div>
       </div>
     </article>
@@ -116,22 +74,29 @@ export function DeliveryStage({ metrics }: { metrics: DashboardMetrics }) {
 function MiniStat({
   label,
   value,
-  tone,
+  percent,
+  tone = "gold",
 }: {
   label: string;
   value: number;
-  tone: "gold" | "rose";
+  percent: number | null;
+  tone?: "gold" | "rose";
 }) {
   return (
     <div
-      className={`rounded-2xl px-4 py-3 ${
-        tone === "gold" ? "bg-[#fbf6e8]" : "bg-[#fdf4f3]"
+      className={`rounded-2xl border px-4 py-3 ${
+        tone === "gold"
+          ? "border-white/10 bg-white/8"
+          : "border-rose-200/20 bg-rose-500/10"
       }`}
     >
-      <p className="text-[11px] uppercase tracking-wide text-chic-muted">{label}</p>
-      <p className="mt-1 font-serif text-3xl">
+      <p className="text-[11px] font-medium tracking-wide text-white/55 uppercase">
+        {label}
+      </p>
+      <p className="mt-1 text-3xl font-bold tabular">
         <AnimatedNumber value={value} format={formatInt} />
       </p>
+      <p className="mt-1 text-xs text-white/55">{formatPercent(percent)}</p>
     </div>
   );
 }
@@ -150,76 +115,78 @@ export function DeliveryRing({
   const value = percent ?? 0;
   const radius = 72;
   const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (Math.min(100, Math.max(0, value)) / 100) * circumference;
+  const offset =
+    circumference - (Math.min(100, Math.max(0, value)) / 100) * circumference;
 
   return (
     <div className="relative mx-auto" style={{ width: size, height: size }}>
       <svg width={size} height={size} viewBox="0 0 188 188" className="rotate-[-90deg]">
-        <circle cx="94" cy="94" r={radius} fill="none" stroke="#e7f0ea" strokeWidth="12" />
         <circle
           cx="94"
           cy="94"
           r={radius}
           fill="none"
-          stroke="url(#deliveryGold)"
-          strokeWidth="3"
-          opacity="0.35"
+          stroke="rgba(255,255,255,0.12)"
+          strokeWidth="12"
         />
         <circle
           cx="94"
           cy="94"
           r={radius}
           fill="none"
-          stroke="#1b6e4e"
+          stroke="#C8A95A"
+          strokeWidth="2.5"
+          opacity="0.45"
+        />
+        <circle
+          cx="94"
+          cy="94"
+          r={radius}
+          fill="none"
+          stroke="#E6F0EB"
           strokeWidth="12"
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
           className="progress-ring"
         />
-        <defs>
-          <linearGradient id="deliveryGold" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#c9a227" />
-            <stop offset="100%" stopColor="#1b6e4e" />
-          </linearGradient>
-        </defs>
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-        <p className="font-serif text-4xl text-chic-forest">
+        <p className="text-4xl font-bold tabular">
           <AnimatedNumber
             value={value}
             format={(current) => (percent === null ? "—" : `${current.toFixed(1)}%`)}
           />
         </p>
-        <p className="mt-1 text-[11px] leading-4 text-chic-muted">
-          {delivered} / {total}
+        <p className="mt-1 text-[11px] leading-4 text-white/65">
+          Taux de livraison
           <br />
-          commandes livrées
+          <span className="tabular">
+            {delivered} / {total}
+          </span>
         </p>
       </div>
     </div>
   );
 }
 
-function Sparkline({ series }: { series: number[] }) {
-  if (series.length < 2) return null;
-  const max = Math.max(1, ...series);
-  const width = 140;
-  const height = 28;
-  const d = series
-    .map((value, index) => {
-      const x = (index / (series.length - 1)) * width;
-      const y = height - (value / max) * height;
-      return `${index === 0 ? "M" : "L"} ${x} ${y}`;
-    })
-    .join(" ");
-
+/** Kept for compatibility — dashboard no longer uses the silk hero strip. */
+export function HeroStrip({ metrics }: { metrics: DashboardMetrics }) {
   return (
-    <svg
-      viewBox={`0 0 ${width} ${height}`}
-      className="pointer-events-none absolute bottom-2 right-3 h-7 w-24 opacity-70"
-    >
-      <path d={d} fill="none" stroke="#9fe0bf" strokeWidth="1.6" />
-    </svg>
+    <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      {[
+        { label: "Commandes", value: metrics.orderCount },
+        { label: "Livré", value: metrics.deliveredCount },
+        { label: "En Livraison", value: metrics.inDeliveryCount },
+        { label: "Retour", value: metrics.returnCount },
+      ].map((item) => (
+        <div key={item.label} className="rounded-2xl border border-chic-line bg-white p-4">
+          <p className="text-[11px] text-chic-muted uppercase">{item.label}</p>
+          <p className="mt-1 text-2xl font-bold tabular">
+            <AnimatedNumber value={item.value} format={formatInt} />
+          </p>
+        </div>
+      ))}
+    </div>
   );
 }

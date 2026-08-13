@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
+import { Cairo, Playfair_Display } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
+const cairo = Cairo({
+  variable: "--font-cairo",
+  subsets: ["latin", "arabic"],
+  weight: ["400", "500", "600", "700"],
 });
 
 const playfair = Playfair_Display({
@@ -13,18 +14,20 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "Chic Fragrance Platform",
+  title: "Chic Fragrance — Business Management",
   description:
-    "Plateforme multi-tenant e-commerce — ERP, Sheets, Landing Page Studio, équipe et abonnements.",
+    "Tableau de bord de gestion Chic Fragrance, connecté à Google Sheets.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="fr"
-      className={`${inter.variable} ${playfair.variable} h-full antialiased`}
+      className={`${cairo.variable} ${playfair.variable} h-full antialiased`}
     >
-      <body className="min-h-full bg-background text-foreground">{children}</body>
+      <body className="min-h-full bg-background font-sans text-foreground">
+        {children}
+      </body>
     </html>
   );
 }

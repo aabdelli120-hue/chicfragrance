@@ -3,7 +3,6 @@ import {
   AuthError,
   authErrorResponse,
   buildAuthSession,
-  homePathForRole,
 } from "@/lib/platform/session";
 import {
   getSessionCookieName,

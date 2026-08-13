@@ -1,18 +1,18 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f3f6f4;
-  --foreground: #163028;
-  --chic-forest: #134e3a;
-  --chic-forest-deep: #0d3b2c;
-  --chic-emerald: #1b6e4e;
-  --chic-gold: #c9a227;
-  --chic-gold-soft: #f4e7b5;
-  --chic-cream: #f7f4ee;
+  --background: #f7f8f5;
+  --foreground: #0b3d2e;
+  --chic-forest: #146b52;
+  --chic-forest-deep: #0b3d2e;
+  --chic-emerald: #146b52;
+  --chic-gold: #c8a95a;
+  --chic-gold-soft: #f4e9cf;
+  --chic-cream: #f7f8f5;
   --chic-card: #ffffff;
-  --chic-muted: #5d7269;
-  --chic-line: #e2e8e4;
-  --chic-mint: #e7f4ee;
+  --chic-muted: #5f7268;
+  --chic-line: #e4ebe6;
+  --chic-mint: #e6f0eb;
   --chic-ink: #062c25;
 }
 
@@ -30,7 +30,7 @@
   --color-chic-line: var(--chic-line);
   --color-chic-mint: var(--chic-mint);
   --color-chic-ink: var(--chic-ink);
-  --font-sans: var(--font-inter);
+  --font-sans: var(--font-cairo);
   --font-serif: var(--font-playfair);
 }
 
@@ -46,7 +46,7 @@ body {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-inter), Arial, Helvetica, sans-serif;
+  font-family: var(--font-cairo), Arial, Helvetica, sans-serif;
 }
 
 button,
@@ -55,18 +55,26 @@ input {
   font: inherit;
 }
 
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
 .card {
   background: var(--chic-card);
   border: 1px solid var(--chic-line);
   border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(19, 78, 58, 0.05);
+  box-shadow: 0 8px 28px rgba(11, 61, 46, 0.04);
   transition: transform 200ms ease, box-shadow 200ms ease;
 }
 
-.silk-hero {
+.card:hover {
+  box-shadow: 0 12px 32px rgba(11, 61, 46, 0.07);
+}
+
+.delivery-hero {
   background:
-    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.18), transparent 28%),
-    linear-gradient(135deg, #1b6e4e 0%, #0d3b2c 55%, #163028 100%);
+    radial-gradient(circle at 88% 18%, rgba(200, 169, 90, 0.16), transparent 34%),
+    linear-gradient(145deg, #0f4a38 0%, #0b3d2e 52%, #083328 100%);
 }
 
 .status-en-livraison {
@@ -92,8 +100,8 @@ input {
 }
 
 .status-reporter {
-  background: #eef1f5;
-  color: #4b5563;
+  background: #f4efe3;
+  color: #8a7340;
 }
 
 .status-unknown {
@@ -101,22 +109,10 @@ input {
   color: #4b5563;
 }
 
-.premium-hero {
-  background:
-    radial-gradient(circle at 15% 20%, rgba(27, 110, 78, 0.12), transparent 28%),
-    linear-gradient(160deg, #0d3b2c 0%, #134e3a 100%);
-}
-
-.glass-kpi {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.05));
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(16px);
-}
-
 .nav-active {
-  background: rgba(255, 255, 255, 0.1);
-  box-shadow: inset 3px 0 0 #c9a227;
+  background: var(--chic-mint);
+  color: var(--chic-forest-deep);
+  box-shadow: inset 3px 0 0 var(--chic-gold);
 }
 
 @keyframes fade-up {
@@ -180,12 +176,17 @@ input {
   animation: dash-flow 1.1s linear infinite;
 }
 
+.kpi-bar {
+  transition: width 900ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-up,
   .flow-line,
   .progress-ring,
   .status-pulse,
-  .conn-line {
+  .conn-line,
+  .kpi-bar {
     animation: none !important;
     transition: none !important;
   }

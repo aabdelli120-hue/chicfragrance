@@ -19,7 +19,7 @@ export function OrderDonut({ metrics }: { metrics: DashboardMetrics }) {
 
   return (
     <article className="card p-5">
-      <h2 className="font-serif text-xl">Répartition des commandes</h2>
+      <h2 className="text-lg font-semibold text-chic-forest-deep">Répartition des commandes</h2>
       <div className="mt-5 flex flex-col items-center gap-5 sm:flex-row">
         <svg width="168" height="168" viewBox="0 0 168 168" className="shrink-0">
           <circle cx="84" cy="84" r={radius} fill="none" stroke="#eef2f0" strokeWidth="18" />

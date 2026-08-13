@@ -18,8 +18,8 @@ export const SHEET_STATUS: Record<CanonicalStatus, string> = {
 };
 
 export const UI_STATUS: Record<CanonicalStatus, string> = {
-  EN_LIVRAISON: "En livraison",
-  LIVRE: "Livrée",
+  EN_LIVRAISON: "En Livraison",
+  LIVRE: "Livré",
   INJOIGNABLE: "Injoignable",
   RETOUR: "Retour",
   REPORTER: "Reporter",

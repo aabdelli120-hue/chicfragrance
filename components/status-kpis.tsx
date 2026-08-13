@@ -14,107 +14,81 @@ export function StatusKpis({ metrics }: { metrics: DashboardMetrics }) {
       label: "Commandes totales",
       value: metrics.orderCount,
       percent: metrics.orderCount ? 100 : null,
-      hint: "Toutes les commandes de la période",
-      icon: "orders",
-      className: "bg-white",
+      bar: "bg-chic-forest-deep",
+      soft: "bg-chic-mint",
     },
     {
-      label: "Livrées",
+      label: "Livré",
       value: metrics.deliveredCount,
       percent: share(metrics.deliveredCount, metrics.orderCount),
-      hint: "du total",
-      icon: "done",
-      className: "bg-[#f3faf6] lg:col-span-1",
-      featured: true,
+      bar: "bg-emerald-600",
+      soft: "bg-emerald-50",
     },
     {
-      label: "En livraison",
+      label: "En Livraison",
       value: metrics.inDeliveryCount,
       percent: share(metrics.inDeliveryCount, metrics.orderCount),
-      hint: "du total",
-      icon: "truck",
-      className: "bg-[#fbf7ec]",
+      bar: "bg-chic-gold",
+      soft: "bg-[#fbf7ec]",
     },
     {
-      label: "Retours",
+      label: "Retour",
       value: metrics.returnCount,
       percent: share(metrics.returnCount, metrics.orderCount),
-      hint: "du total",
-      icon: "return",
-      className: "bg-[#fdf4f3]",
+      bar: "bg-rose-500",
+      soft: "bg-rose-50",
     },
     {
-      label: "Injoignables",
+      label: "Injoignable",
       value: metrics.unreachableCount,
       percent: share(metrics.unreachableCount, metrics.orderCount),
-      hint: "du total",
-      icon: "phone",
-      className: "bg-[#f8f3ec]",
+      bar: "bg-orange-500",
+      soft: "bg-orange-50",
     },
     {
-      label: "Reportées",
+      label: "Reporter",
       value: metrics.reporterCount,
       percent: share(metrics.reporterCount, metrics.orderCount),
-      hint: "du total",
-      icon: "later",
-      className: "bg-[#f4f6f8]",
+      bar: "bg-amber-600",
+      soft: "bg-amber-50",
     },
   ];
 
   return (
-    <section className="grid grid-cols-2 gap-3 lg:grid-cols-6">
-      {cards.map((card, index) => (
-        <article
-          key={card.label}
-          className={`card animate-fade-up p-4 transition duration-200 hover:-translate-y-0.5 hover:shadow-md ${card.className}`}
-          style={{ animationDelay: `${index * 50}ms` }}
-        >
-          <div className="flex items-start justify-between">
-            <p className="text-[11px] uppercase tracking-wide text-chic-muted">{card.label}</p>
-            <StatusIcon name={card.icon} />
-          </div>
-          <p className={`mt-3 font-serif ${card.featured ? "text-4xl text-chic-forest" : "text-2xl"}`}>
-            <AnimatedNumber value={card.value} format={formatInt} />
+    <section>
+      <div className="mb-3 flex items-end justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold text-chic-forest-deep">Statuts commandes</h2>
+          <p className="text-xs text-chic-muted">
+            Valeurs alignées sur Google Sheets · exactes
           </p>
-          <p className="mt-2 text-xs text-chic-muted">
-            {formatPercent(card.percent)} {card.hint}
-          </p>
-        </article>
-      ))}
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">
+        {cards.map((card, index) => (
+          <article
+            key={card.label}
+            className={`card animate-fade-up p-4 ${card.soft}`}
+            style={{ animationDelay: `${index * 45}ms` }}
+          >
+            <p className="text-[11px] font-semibold tracking-[0.14em] text-chic-muted uppercase">
+              {card.label}
+            </p>
+            <p className="mt-3 text-3xl font-bold tabular text-chic-forest-deep">
+              <AnimatedNumber value={card.value} format={formatInt} />
+            </p>
+            <p className="mt-2 text-xs font-medium text-chic-muted">
+              {formatPercent(card.percent)} du total
+            </p>
+            <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/80">
+              <div
+                className={`kpi-bar h-full rounded-full ${card.bar}`}
+                style={{ width: `${Math.min(100, card.percent ?? 0)}%` }}
+              />
+            </div>
+          </article>
+        ))}
+      </div>
     </section>
-  );
-}
-
-function StatusIcon({ name }: { name: string }) {
-  const common = "text-chic-forest/70";
-  return (
-    <span className={`flex h-7 w-7 items-center justify-center rounded-full bg-white/70 ${common}`}>
-      {name === "done" ? (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-          <path d="M5 12.5 10 17l9-10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-        </svg>
-      ) : name === "truck" ? (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-          <path d="M3 7h11v10H3V7Zm11 3h4l3 3v4h-7V10Z" stroke="currentColor" strokeWidth="1.6" />
-        </svg>
-      ) : name === "return" ? (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-          <path d="M7 7H4v3M4 10c2-4 11-6 16 1M17 17h3v-3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-        </svg>
-      ) : name === "phone" ? (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-          <path d="M8 5h8v14H8V5Z" stroke="currentColor" strokeWidth="1.6" />
-        </svg>
-      ) : name === "later" ? (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.6" />
-          <path d="M12 8v5l3 2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-        </svg>
-      ) : (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-          <rect x="5" y="5" width="14" height="14" rx="2" stroke="currentColor" strokeWidth="1.6" />
-        </svg>
-      )}
-    </span>
   );
 }

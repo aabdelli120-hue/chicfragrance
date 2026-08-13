@@ -18,7 +18,7 @@ export function OrderFlow({ metrics }: { metrics: DashboardMetrics }) {
   const nodes: Node[] = [
     { id: "orders", label: "Commandes", value: metrics.orderCount, x: 88, y: 62, fill: "#134e3a", ring: "#c9a227" },
     { id: "ship", label: "En livraison", value: metrics.inDeliveryCount, x: 320, y: 62, fill: "#c9a227", ring: "#f4e7b5" },
-    { id: "done", label: "Livrées", value: metrics.deliveredCount, x: 552, y: 62, fill: "#1b6e4e", ring: "#9fe0bf" },
+    { id: "done", label: "Livré", value: metrics.deliveredCount, x: 552, y: 62, fill: "#146B52", ring: "#9fe0bf" },
     { id: "return", label: "Retours", value: metrics.returnCount, x: 204, y: 198, fill: "#b42318", ring: "#f4c7c3" },
     { id: "unreach", label: "Injoignables", value: metrics.unreachableCount, x: 320, y: 198, fill: "#c2783a", ring: "#f3d2b3" },
     { id: "later", label: "Reportées", value: metrics.reporterCount, x: 436, y: 198, fill: "#6b7c93", ring: "#d5dde6" },
@@ -26,7 +26,7 @@ export function OrderFlow({ metrics }: { metrics: DashboardMetrics }) {
 
   return (
     <article className="card overflow-hidden p-5 lg:p-6">
-      <h2 className="font-serif text-xl">Flux des commandes</h2>
+      <h2 className="text-lg font-semibold text-chic-forest-deep">Flux des commandes</h2>
       <p className="mt-1 text-xs text-chic-muted">
         Lecture visuelle des statuts réels Google Sheets, sans statuts inventés.
       </p>
@@ -114,7 +114,7 @@ function MobileFlow({ metrics }: { metrics: DashboardMetrics }) {
   const main = [
     { label: "Commandes", value: metrics.orderCount, color: "bg-chic-forest" },
     { label: "En livraison", value: metrics.inDeliveryCount, color: "bg-chic-gold" },
-    { label: "Livrées", value: metrics.deliveredCount, color: "bg-chic-emerald" },
+    { label: "Livré", value: metrics.deliveredCount, color: "bg-chic-emerald" },
   ];
   const secondary = [
     { label: "Retours", value: metrics.returnCount, color: "bg-[#b42318]" },
@@ -141,7 +141,7 @@ function MobileFlow({ metrics }: { metrics: DashboardMetrics }) {
       <div className="grid grid-cols-3 gap-2">
         {secondary.map((item) => (
           <div key={item.label} className="rounded-2xl bg-chic-cream/80 px-2 py-3 text-center">
-            <p className="font-serif text-xl">{item.value}</p>
+            <p className="text-xl font-bold tabular">{item.value}</p>
             <p className="mt-1 text-[10px] uppercase tracking-wide text-chic-muted">{item.label}</p>
           </div>
         ))}

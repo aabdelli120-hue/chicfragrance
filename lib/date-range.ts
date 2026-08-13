@@ -11,6 +11,7 @@ export type RangePreset =
   | "7d"
   | "30d"
   | "week"
+  | "lastWeek"
   | "month"
   | "lastMonth"
   | "custom";
@@ -21,9 +22,10 @@ export const RANGE_PRESETS: Array<{ id: RangePreset; label: string }> = [
   { id: "7d", label: "7 derniers jours" },
   { id: "30d", label: "30 derniers jours" },
   { id: "week", label: "Cette semaine" },
+  { id: "lastWeek", label: "Semaine précédente" },
   { id: "month", label: "Ce mois" },
   { id: "lastMonth", label: "Mois précédent" },
-  { id: "custom", label: "Personnalisé" },
+  { id: "custom", label: "Période personnalisée" },
 ];
 
 function startOfDay(date: Date) {
@@ -62,6 +64,12 @@ export function resolveDateRange(
       return { from: toIsoDate(addDays(today, -29)), to: toIsoDate(today) };
     case "week":
       return { from: toIsoDate(startOfWeekMonday(today)), to: toIsoDate(today) };
+    case "lastWeek": {
+      const thisMonday = startOfWeekMonday(today);
+      const lastMonday = addDays(thisMonday, -7);
+      const lastSunday = addDays(thisMonday, -1);
+      return { from: toIsoDate(lastMonday), to: toIsoDate(lastSunday) };
+    }
     case "month":
       return {
         from: toIsoDate(new Date(today.getFullYear(), today.getMonth(), 1)),
@@ -117,6 +125,8 @@ export function presetShortLabel(preset: RangePreset): string {
       return "30 derniers jours";
     case "week":
       return "Cette semaine";
+    case "lastWeek":
+      return "Semaine précédente";
     case "month":
       return "Ce mois";
     case "lastMonth":
