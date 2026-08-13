@@ -1,26 +1,99 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f3f6f4;
+  --foreground: #163028;
+  --chic-forest: #134e3a;
+  --chic-forest-deep: #0d3b2c;
+  --chic-emerald: #1b6e4e;
+  --chic-gold: #c9a227;
+  --chic-gold-soft: #f4e7b5;
+  --chic-cream: #f7f4ee;
+  --chic-card: #ffffff;
+  --chic-muted: #5d7269;
+  --chic-line: #e2e8e4;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-chic-forest: var(--chic-forest);
+  --color-chic-forest-deep: var(--chic-forest-deep);
+  --color-chic-emerald: var(--chic-emerald);
+  --color-chic-gold: var(--chic-gold);
+  --color-chic-gold-soft: var(--chic-gold-soft);
+  --color-chic-cream: var(--chic-cream);
+  --color-chic-card: var(--chic-card);
+  --color-chic-muted: var(--chic-muted);
+  --color-chic-line: var(--chic-line);
+  --font-sans: var(--font-inter);
+  --font-serif: var(--font-playfair);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), Arial, Helvetica, sans-serif;
+}
+
+button,
+select,
+input {
+  font: inherit;
+}
+
+.card {
+  background: var(--chic-card);
+  border: 1px solid var(--chic-line);
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(19, 78, 58, 0.05);
+}
+
+.silk-hero {
+  background:
+    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.18), transparent 28%),
+    linear-gradient(135deg, #1b6e4e 0%, #0d3b2c 55%, #163028 100%);
+}
+
+.status-confirmée,
+.status-confirmee {
+  background: #e8f1ff;
+  color: #1d4ed8;
+}
+
+.status-en-préparation,
+.status-en-preparation {
+  background: #f3e8ff;
+  color: #7e22ce;
+}
+
+.status-en-livraison {
+  background: #fff4d6;
+  color: #b45309;
+}
+
+.status-livrée,
+.status-livree {
+  background: #e4f7ec;
+  color: #15803d;
+}
+
+.status-retour {
+  background: #fde8e8;
+  color: #b91c1c;
+}
+
+.status-annulée,
+.status-annulee {
+  background: #eef2f1;
+  color: #4b5563;
 }
