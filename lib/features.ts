@@ -94,7 +94,7 @@ export const FEATURES: FeatureDefinition[] = [
   { id: "AI_CREATIVE_VARIATIONS", label: "Variations de créatifs", requiredPlan: "PRO", available: false, category: "Création" },
   { id: "CREATIVE_STUDIO", label: "Creative Studio avancé", requiredPlan: "ELITE", available: false, category: "Création" },
 
-  { id: "AUTO_KPI_REFRESH", label: "Actualisation automatique des KPI", requiredPlan: "ESSENTIAL", available: true, category: "Automatisation" },
+  { id: "AUTO_KPI_REFRESH", label: "Actualisation automatique des KPI", requiredPlan: "PRO", available: true, category: "Automatisation" },
   { id: "AUTOMATIONS", label: "Règles d’automatisation", requiredPlan: "ELITE", available: false, category: "Automatisation" },
   { id: "AUTO_REPORTS", label: "Rapports générés automatiquement", requiredPlan: "ELITE", available: false, category: "Automatisation" },
 
@@ -152,14 +152,14 @@ export const FEATURE_GRID: ReadonlyArray<{
     description: "Automatiser les tâches répétitives.",
     detail: "Commandes, dépenses et rapports sans saisie manuelle.",
     feature: "AUTOMATIONS",
-    badge: "PRO",
+    badge: "ELITE",
   },
   {
     id: "store",
     icon: "store",
     name: "Store Builder",
     description: "Créer votre boutique e-commerce.",
-    detail: "Module Elite. Génération de boutique non active.",
+    detail: "Module ELITE. Génération de boutique non active.",
     feature: "AI_STORE_BUILDER",
     badge: "ELITE",
   },

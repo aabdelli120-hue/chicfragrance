@@ -8,7 +8,7 @@ export function PlanComparison() {
       <p className="text-[11px] uppercase tracking-[0.16em] text-chic-muted">Comparaison</p>
       <h2 className="mt-1 text-lg font-semibold tracking-tight">Comparez les capacités</h2>
       <p className="mt-1 text-sm text-chic-muted">
-        ✓ inclus · Pro / Elite indique l’offre qui débloque la capacité · Bientôt pour les modules
+        ✓ inclus · GROW / ELITE indique l’offre qui débloque la capacité · Bientôt pour les modules
         en préparation.
       </p>
 

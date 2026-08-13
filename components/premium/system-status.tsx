@@ -40,25 +40,25 @@ export function PricingRail({ status }: { status: Status }) {
     {
       label: "Analytics",
       value: hasPro ? "Avancé" : "Basique",
-      meta: hasPro ? "Inclus dans votre offre" : "Avancé avec Pro",
+      meta: hasPro ? "Inclus dans votre offre" : "Avancé avec GROW",
       tone: sheetsOk ? "ok" : "idle",
     },
     {
       label: "IA",
-      value: hasPro ? "Inclus" : "Avec Pro",
+      value: hasPro ? "Inclus" : "Avec GROW",
       meta: "Bientôt disponible",
       tone: "gold",
     },
     {
       label: "Automation",
-      value: hasElite ? "Inclus" : "Avec Elite",
+      value: hasElite ? "Inclus" : "Avec ELITE",
       meta: "Bientôt disponible",
       tone: "gold",
     },
     {
       label: "Store",
       value: "Bientôt",
-      meta: "Module Elite",
+      meta: "Module ELITE",
       tone: "idle",
     },
     {

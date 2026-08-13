@@ -4,7 +4,7 @@ import type { PlanId } from "@/lib/plans";
  * Centralized plan capabilities for Landing Pages and future modules.
  * Do not scatter plan checks in UI components — use these helpers.
  *
- * Commercial names: Essential, Pro, Elite.
+ * Commercial names: START, GROW, ELITE.
  */
 export type PlanCapability =
   | "landing_pages"
@@ -62,9 +62,9 @@ const PLAN_CAPS: Record<PlanId, Partial<Record<PlanCapability, number | boolean>
 /** Display names shown in the product UI. */
 export const PLAN_PUBLIC_NAME: Record<PlanId, string> = {
   FREE: "Gratuit",
-  ESSENTIAL: "Essential",
-  PRO: "Pro",
-  ELITE: "Elite",
+  ESSENTIAL: "START",
+  PRO: "GROW",
+  ELITE: "ELITE",
 };
 
 export function planHasCapability(plan: PlanId, capability: PlanCapability): boolean {

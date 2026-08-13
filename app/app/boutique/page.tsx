@@ -6,7 +6,7 @@ export default function AppBoutiquePage() {
     <ModuleFrame
       feature="AI_STORE_BUILDER"
       title="Store Builder"
-      description="Créer votre boutique e-commerce. Module Elite — bientôt disponible."
+      description="Créer votre boutique e-commerce. Module ELITE — bientôt disponible."
     >
       <div className="card p-5">
         <p className="text-[11px] uppercase tracking-[0.14em] text-chic-muted">Pipeline boutique</p>

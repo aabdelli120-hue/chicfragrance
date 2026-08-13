@@ -1,7 +1,7 @@
 /**
  * Internal plan identifiers. These are persisted (organizations.plan,
  * subscriptions.planId) so they stay stable; the commercial names shown in the
- * product are Essential / Pro / Elite (see `PLAN_DISPLAY_NAME`).
+ * product are START / GROW / ELITE (see `PLAN_DISPLAY_NAME`).
  */
 export const PLAN_IDS = ["FREE", "ESSENTIAL", "PRO", "ELITE"] as const;
 export type PlanId = (typeof PLAN_IDS)[number];
@@ -27,16 +27,16 @@ export const PLAN_RANK: Record<PlanId, number> = {
 /** Commercial names. Internal ids are never shown to customers. */
 export const PLAN_DISPLAY_NAME: Record<PlanId, string> = {
   FREE: "Gratuit",
-  ESSENTIAL: "Essential",
-  PRO: "Pro",
-  ELITE: "Elite",
+  ESSENTIAL: "START",
+  PRO: "GROW",
+  ELITE: "ELITE",
 };
 
 export const OFFER_DISPLAY_NAME: Record<OfferId, string> = {
-  ESSENTIAL: "Essential",
-  PRO: "Pro",
-  ELITE: "Elite",
-  CUSTOM: "Sur mesure",
+  ESSENTIAL: "START",
+  PRO: "GROW",
+  ELITE: "ELITE",
+  CUSTOM: "SUR MESURE",
 };
 
 export function isPlanId(id: OfferId): id is Exclude<OfferId, "CUSTOM"> {
@@ -134,18 +134,19 @@ const CONTACT: PlanContactMessage = {
 export const PLANS: PlanDefinition[] = [
   {
     id: "ESSENTIAL",
-    name: "Essential",
+    name: "START",
     price: 900,
     period: "month",
-    description: "Pour les marchands qui ont besoin d’un tableau de bord opérationnel fiable.",
+    description: "Pour les marchands qui veulent les outils de gestion essentiels.",
     accent: "neutral",
-    cta: "Choisir Essential",
+    cta: "Choisir START",
     category: "MANAGEMENT",
     availability: "available",
     capabilities: [
       { label: "MANAGEMENT", value: "COMPLET", tone: "on" },
       { label: "ANALYTICS", value: "BASIQUE", tone: "partial" },
       { label: "AI", value: "NON INCLUS", tone: "off" },
+      { label: "AUTOMATION", value: "NON INCLUS", tone: "off" },
       { label: "STORE", value: "NON INCLUS", tone: "off" },
     ],
     features: [
@@ -162,14 +163,14 @@ export const PLANS: PlanDefinition[] = [
   },
   {
     id: "PRO",
-    name: "Pro",
+    name: "GROW",
     price: 1900,
     period: "month",
-    badge: "Le plus populaire",
+    badge: "LE PLUS POPULAIRE",
     recommended: true,
-    description: "Analytics, prévisions et studio IA pour développer et automatiser l’activité.",
+    description: "Analytics avancés, publicité et génération IA pour développer l’activité.",
     accent: "emerald",
-    cta: "Passer à Pro",
+    cta: "Choisir GROW",
     category: "ANALYTICS + AI",
     availability: "partial",
     capabilities: [
@@ -179,7 +180,7 @@ export const PLANS: PlanDefinition[] = [
       { label: "STORE", value: "COMING SOON", tone: "soon" },
     ],
     features: [
-      "Tout Essential",
+      "Tout START",
       "Analytics avancés",
       "Comparaison des périodes",
       "Performance publicitaire",
@@ -196,13 +197,13 @@ export const PLANS: PlanDefinition[] = [
   },
   {
     id: "ELITE",
-    name: "Elite",
+    name: "ELITE",
     price: 2900,
     period: "month",
-    badge: "Suite complète",
-    description: "Une suite d’outils pour gérer, analyser, automatiser et développer votre e-commerce.",
+    badge: "ELITE",
+    description: "Suite complète: studio IA, automatisations, intelligence et Store Builder.",
     accent: "gold",
-    cta: "Choisir Elite",
+    cta: "Choisir ELITE",
     category: "AI + AUTOMATION + STORE",
     availability: "partial",
     capabilities: [
@@ -212,7 +213,7 @@ export const PLANS: PlanDefinition[] = [
       { label: "STORE", value: "COMING SOON", tone: "soon" },
     ],
     features: [
-      "Tout Pro",
+      "Tout GROW",
       "AI Product Studio",
       "Creative Studio avancé",
       "Landing pages avancées",
@@ -232,7 +233,7 @@ export const PLANS: PlanDefinition[] = [
     price: null,
     period: null,
     quoteLabel: "Sur devis",
-    description: "Pour les activités qui ont besoin d'une configuration dédiée.",
+    description: "Pour les activités qui ont besoin d’intégrations, de boutiques multiples et de workflows dédiés.",
     accent: "neutral",
     cta: "Parler à un expert",
     category: "PLATFORM",

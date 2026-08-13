@@ -32,7 +32,8 @@ export function PremiumWorkspace() {
           <div>
             <h1 className="text-2xl font-semibold tracking-tight lg:text-3xl">Premium</h1>
             <p className="mt-1 max-w-xl text-sm text-chic-muted">
-              Débloquez des outils avancés pour développer et automatiser votre activité.
+              Offres, capacités et activation. Choisissez votre niveau d’outils, notre équipe
+              s’occupe de l’activation.
             </p>
           </div>
           <p className="inline-flex w-fit items-center gap-2 rounded-full border border-chic-line bg-white px-3 py-1.5 text-xs">

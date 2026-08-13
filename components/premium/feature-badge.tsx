@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requiredPlanFor } from "@/lib/entitlements";
 import type { FeatureId } from "@/lib/features";
+import { PLAN_DISPLAY_NAME } from "@/lib/plans";
 import { PlanBadge } from "@/components/premium/plan-badge";
 
 export function FeatureBadge({
@@ -25,7 +26,7 @@ export function PremiumLock({
   description: string;
 }) {
   const plan = requiredPlanFor(feature);
-  const label = plan === "ELITE" ? "Elite" : "Pro";
+  const label = PLAN_DISPLAY_NAME[plan];
 
   return (
     <div className="card max-w-lg p-5">
@@ -39,7 +40,7 @@ export function PremiumLock({
       <p className="mt-1 text-sm text-chic-muted">Disponible avec {label}</p>
       <p className="mt-2 text-sm">{description}</p>
       <Link
-        href="/premium#plans"
+        href="/app/premium#plans"
         className="mt-4 inline-flex rounded-xl bg-chic-emerald px-4 py-2.5 text-sm font-semibold text-white"
       >
         Voir le plan {label}

@@ -46,12 +46,13 @@ export type ResolvedPlan = PlanDefinition & {
 };
 
 function resolvePlan(plan: PlanDefinition, override: PlanOverride | undefined): ResolvedPlan {
-  const price = override?.price === undefined ? plan.price : override.price;
-  const resolvedPrice = typeof price === "number" ? price : plan.price;
+  const resolvedPrice = override?.price !== undefined ? override.price : plan.price;
+  const quoted = resolvedPrice === null;
   const availability = override?.availability ?? plan.availability;
   const features =
     override?.features && override.features.length > 0 ? override.features : plan.features;
   const badge = override?.badge === undefined ? plan.badge : override.badge || undefined;
+  const quoteLabel = plan.quoteLabel ?? "Sur devis";
 
   return {
     ...plan,
@@ -59,9 +60,9 @@ function resolvePlan(plan: PlanDefinition, override: PlanOverride | undefined): 
     badge,
     availability,
     features,
-    priceLabel: formatDzd(resolvedPrice),
-    periodLabel: "/mois",
-    messagePrice: formatDa(resolvedPrice),
+    priceLabel: quoted ? quoteLabel : formatDzd(resolvedPrice),
+    periodLabel: quoted ? null : "/mois",
+    messagePrice: quoted ? quoteLabel : formatDa(resolvedPrice),
     featureCount: features.length,
     statusLabel: AVAILABILITY_LABEL[availability],
   };

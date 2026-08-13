@@ -6,16 +6,19 @@ import { usePremium } from "@/components/premium/premium-provider";
 export function PricingSection() {
   const { plans, openAssistant } = usePremium();
   const tiers = plans.filter((plan) => plan.id !== "CUSTOM");
+  const custom = plans.find((plan) => plan.id === "CUSTOM");
 
   return (
     <section id="plans" className="scroll-mt-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-[11px] uppercase tracking-[0.16em] text-chic-muted">Plans</p>
-          <h2 className="mt-1 text-lg font-semibold tracking-tight">Choisissez le niveau d’outils</h2>
+          <p className="text-[11px] uppercase tracking-[0.16em] text-chic-muted">Offres</p>
+          <h2 className="mt-1 text-lg font-semibold tracking-tight">
+            Choisissez votre niveau de capacités
+          </h2>
           <p className="mt-1 max-w-2xl text-sm text-chic-muted">
-            Une suite d’outils pour gérer, analyser, automatiser et développer votre activité e-commerce.
-            Paiement bientôt disponible.
+            Sélectionnez une offre dans l’application, puis finalisez l’activation avec notre
+            équipe. Aucune information bancaire n’est demandée ici.
           </p>
         </div>
         <button
@@ -32,6 +35,12 @@ export function PricingSection() {
           <PlanCard key={plan.id} plan={plan} />
         ))}
       </div>
+
+      {custom ? (
+        <div className="mt-3">
+          <PlanCard plan={custom} wide />
+        </div>
+      ) : null}
     </section>
   );
 }
